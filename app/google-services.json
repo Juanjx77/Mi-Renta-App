@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "854832076197",
+    "project_id": "mi-renta-8ad86",
+    "storage_bucket": "mi-renta-8ad86.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:854832076197:android:bc44ffda6582f46049044c",
+        "android_client_info": {
+          "package_name": "com.mirenta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBefLdZYaEhAtioTUjxL68ISuW5CZYpeLg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
