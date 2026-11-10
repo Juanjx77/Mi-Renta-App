@@ -27,7 +27,7 @@ data class Resultado(
 
 /** Port directo del cálculo simplificado del prototipo HTML (año gravable 2025). */
 object TaxCalculator {
-    const val UVT = Reglas2025.UVT
+    val UVT = Reglas2025.uvt.valor
 
     private fun impuestoEnUvt(u: Double): Double = Reglas2025.impuestoEnUvt(u)
 
@@ -39,24 +39,25 @@ object TaxCalculator {
         val inc = min(v.aportes.toDouble(), lab)
         val base = lab - inc
 
-        val viv = min(v.vivienda.toDouble(), Reglas2025.TOPE_INTERESES_VIVIENDA_UVT * UVT)
-        val pre = min(v.prepagada.toDouble(), Reglas2025.TOPE_SALUD_PREPAGADA_UVT * UVT)
-        val dep = min(v.dependientes.toDouble(), Reglas2025.MAX_DEPENDIENTES) * Reglas2025.DEDUCCION_DEPENDIENTE_UVT * UVT
-        val afc = minOf(v.afc.toDouble(), Reglas2025.PORCENTAJE_MAX_AFC * lab, Reglas2025.TOPE_AFC_UVT * UVT)
+        val viv = min(v.vivienda.toDouble(), Reglas2025.topeInteresesViviendaUvt.valor * UVT)
+        val pre = min(v.prepagada.toDouble(), Reglas2025.topeSaludPrepagadaUvt.valor * UVT)
+        val dep = min(v.dependientes.toDouble(), Reglas2025.maxDependientes.valor) * Reglas2025.deduccionDependienteUvt.valor * UVT
+        val afc = minOf(v.afc.toDouble(), Reglas2025.porcentajeMaxAfc.valor * lab, Reglas2025.topeAfcUvt.valor * UVT)
         val ded = viv + pre + dep + afc
+        val dedSinDep = viv + pre + afc
 
-        val exe = min(Reglas2025.PORCENTAJE_RENTA_EXENTA_LABORAL * max(base - ded, 0.0), Reglas2025.TOPE_RENTA_EXENTA_LABORAL_UVT * UVT)
-        val lim = min(Reglas2025.PORCENTAJE_LIMITE_CONJUNTO * base, Reglas2025.TOPE_LIMITE_CONJUNTO_UVT * UVT)
-        val ben = min(ded + exe, lim)
+        val exe = min(Reglas2025.porcentajeRentaExentaLaboral.valor * max(base - ded, 0.0), Reglas2025.topeRentaExentaLaboralUvt.valor * UVT)
+        val lim = min(Reglas2025.porcentajeLimiteConjunto.valor * base, Reglas2025.topeLimiteConjuntoUvt.valor * UVT)
+        val ben = min(dedSinDep + exe, lim) + dep
         val rl = max(base - ben, 0.0)
         val rg = rl + cap
         val u = rg / UVT
         val imp = ((impuestoEnUvt(u) * UVT / 1000).roundToLong() * 1000).toDouble()
 
         val motivos = buildList {
-            if (lab + cap >= Reglas2025.TOPE_INGRESOS_DECLARAR_UVT * UVT) add("ingresos brutos ≥ 1.400 UVT (${fm(Reglas2025.TOPE_INGRESOS_DECLARAR_UVT * UVT)})")
-            if (v.patrimonio >= Reglas2025.TOPE_PATRIMONIO_DECLARAR_UVT * UVT) add("patrimonio bruto ≥ 4.500 UVT (${fm(Reglas2025.TOPE_PATRIMONIO_DECLARAR_UVT * UVT)})")
-            if (v.consumos >= Reglas2025.TOPE_CONSUMOS_DECLARAR_UVT * UVT) add("consumos/compras ≥ 1.400 UVT")
+            if (lab + cap >= Reglas2025.topeIngresosDeclararUvt.valor * UVT) add("ingresos brutos ≥ 1.400 UVT (${fm(Reglas2025.topeIngresosDeclararUvt.valor * UVT)})")
+            if (v.patrimonio >= Reglas2025.topePatrimonioDeclararUvt.valor * UVT) add("patrimonio bruto ≥ 4.500 UVT (${fm(Reglas2025.topePatrimonioDeclararUvt.valor * UVT)})")
+            if (v.consumos >= Reglas2025.topeConsumosDeclararUvt.valor * UVT) add("consumos/compras ≥ 1.400 UVT")
         }
 
         return Resultado(
