@@ -1,9 +1,9 @@
 package com.mirenta.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mirenta.R
 import com.mirenta.domain.Validadores
 import com.mirenta.ui.AuthViewModel
 import com.mirenta.ui.components.Aviso
@@ -86,16 +88,18 @@ fun LoginScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 24.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(
-                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(RC.Lima),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("R", color = RC.Dark, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Image(
+                painter = painterResource(id = R.drawable.app_logo),
+                contentDescription = "Logo Rentafácil",
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)),
+            )
+            Column {
+                Text("Mi renta", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Tu declaración de renta, simplificada.", color = RC.OnDarkMuted, fontSize = 11.sp)
             }
-            Text("Mi Renta", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
         }
-        Spacer(Modifier.height(44.dp))
+        Spacer(Modifier.height(36.dp))
         Text(
             buildAnnotatedString {
                 append("Prepara tu renta ")
