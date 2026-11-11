@@ -25,6 +25,7 @@ object Rutas {
     const val Vista = "vista"
     const val Pdf = "pdf"
     const val Soportes = "soportes"
+    const val Ingresos = "ingresos"
 }
 
 data class Pestana(val ruta: String, val titulo: String, val icono: ImageVector)

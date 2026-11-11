@@ -47,6 +47,7 @@ import com.mirenta.ui.screens.DeduccionesScreen
 import com.mirenta.ui.screens.DetalleScreen
 import com.mirenta.ui.screens.ExogenaScreen
 import com.mirenta.ui.screens.FormularioScreen
+import com.mirenta.ui.screens.IngresosScreen
 import com.mirenta.ui.screens.InicioScreen
 import com.mirenta.ui.screens.LoginScreen
 import com.mirenta.ui.screens.PatrimonioScreen
@@ -154,6 +155,9 @@ fun MiRentaApp() {
                     composable(Rutas.Datos) {
                         DatosScreen(onBack = { irAInicio() }, onGuardar = { irAInicio() })
                     }
+                    composable(Rutas.Ingresos) {
+                        IngresosScreen(vm, onBack = { irAInicio() }, onGuardar = { irAInicio() })
+                    }
                     composable(Rutas.Inicio) {
                         InicioScreen(
                             vm = vm,
@@ -173,7 +177,9 @@ fun MiRentaApp() {
                     composable(Rutas.Formulario) { FormularioScreen(onNav = { ir(it) }) }
                     composable(Rutas.Aprende) { AprendeScreen() }
                     composable(Rutas.Patrimonio) { PatrimonioScreen(onBack = { volver() }) }
-                    composable(Rutas.Deducciones) { DeduccionesScreen(onBack = { volver() }) }
+                    composable(Rutas.Deducciones) {
+                        DeduccionesScreen(vm, onBack = { irAInicio() }, onGuardar = { irAInicio() })
+                    }
                     composable(Rutas.Retenciones) { RetencionesScreen(onBack = { volver() }) }
                     composable(Rutas.Soportes) { SoportesScreen(onBack = { volver() }) }
                     composable(Rutas.Detalle) { DetalleScreen(onBack = { volver() }) }

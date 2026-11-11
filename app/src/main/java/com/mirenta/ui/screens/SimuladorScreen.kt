@@ -12,7 +12,6 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Percent
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -21,27 +20,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mirenta.domain.Campo
-import com.mirenta.navigation.Rutas
 import com.mirenta.ui.RentaViewModel
 import com.mirenta.ui.components.Aviso
 import com.mirenta.ui.components.AvisoTipo
 import com.mirenta.ui.components.BotonContorno
 import com.mirenta.ui.components.BotonPrimario
-import com.mirenta.ui.components.CampoTexto
+import com.mirenta.ui.components.CampoEntrada
 import com.mirenta.ui.components.Etiqueta
 import com.mirenta.ui.components.Fila
 import com.mirenta.ui.components.FilasCard
-import com.mirenta.ui.components.MilesTransformation
 import com.mirenta.ui.components.Pill
 import com.mirenta.ui.components.PillTipo
 import com.mirenta.ui.components.ScreenScaffold
@@ -50,7 +42,6 @@ import com.mirenta.ui.theme.MiRentaTheme
 import com.mirenta.ui.theme.RC
 import com.mirenta.util.dec
 import com.mirenta.util.fm
-import com.mirenta.util.miles
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -58,7 +49,7 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SimuladorScreen(vm: RentaViewModel, onNav: (String) -> Unit) {
-    val e = vm.entradas
+    val e = vm.simulacion
     val resultadosRequester = remember { BringIntoViewRequester() }
     LaunchedEffect(vm.calculado) {
         if (vm.calculado) {
@@ -71,42 +62,19 @@ fun SimuladorScreen(vm: RentaViewModel, onNav: (String) -> Unit) {
         titulo = "Simulador",
         sub = "Juega con tus cifras y mira el impuesto al instante",
     ) {
-        if (vm.exogena != null) {
-            Aviso(AvisoTipo.Info, texto = "Valores precargados con tu exógena (ejemplo).")
-        }
-
         Campo.entries.forEach { c ->
-            Column {
-                if (c.seccion.isNotEmpty()) Etiqueta(c.seccion)
-                val valor = e[c]
-                CampoTexto(
-                    etiqueta = c.etiqueta,
-                    placeholder = if (c.ejemplo > 0) miles(c.ejemplo) else "0",
-                    valor = if (valor > 0) valor.toString() else "",
-                    onCambio = { t -> vm.cambiar(c, t.filter { it.isDigit() }.take(12).toLongOrNull() ?: 0L) },
-                    teclado = KeyboardType.Number,
-                    transformacion = if (c.soloCantidad) VisualTransformation.None else MilesTransformation,
-                )
-                Text(
-                    buildAnnotatedString {
-                        append(c.ayuda)
-                        if (valor > 0) {
-                            append(" · ")
-                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(if (c.soloCantidad) valor.toString() else fm(valor.toDouble()))
-                            }
-                        }
-                    },
-                    fontSize = 12.sp,
-                    color = RC.Label,
-                )
-            }
+            CampoEntrada(
+                campo = c,
+                valor = e[c],
+                onCambio = { t -> vm.cambiar(c, t.filter { it.isDigit() }.take(12).toLongOrNull() ?: 0L) }
+            )
         }
 
+        BotonContorno("Partir de mi declaración") { vm.partirDeDeclaracion() }
         BotonPrimario("Calcular mi renta", Icons.Outlined.Percent) { vm.calcular() }
 
         if (vm.calculado) {
-            val o = vm.resultado
+            val o = vm.resultadoSimulacion
             val aFavor = o.saldo < 0
             Column(
                 Modifier.bringIntoViewRequester(resultadosRequester),
@@ -177,7 +145,6 @@ fun SimuladorScreen(vm: RentaViewModel, onNav: (String) -> Unit) {
                     negrita = "Tarifa marginal ${(o.tarifaMarginal * 100).roundToInt()}%:",
                     texto = " cada $ 1.000.000 más de renta gravable te costaría ≈ ${fm(o.tarifaMarginal * 1e6)}. Por eso un aporte a AFC puede ahorrarte hasta ese valor, si no pasas los límites.",
                 )
-                BotonPrimario("Generar documento con mis datos", Icons.Outlined.Description) { onNav(Rutas.Vista) }
             }
         }
 

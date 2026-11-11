@@ -63,6 +63,9 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.mirenta.domain.Campo
+import com.mirenta.util.fm
+import com.mirenta.util.miles
 import androidx.compose.ui.unit.sp
 import com.mirenta.ui.theme.RC
 
@@ -437,5 +440,37 @@ object MilesTransformation : VisualTransformation {
             }
         }
         return TransformedText(AnnotatedString(formateado), mapa)
+    }
+}
+
+@Composable
+fun CampoEntrada(
+    campo: Campo,
+    valor: Long,
+    onCambio: (String) -> Unit,
+) {
+    Column {
+        if (campo.seccion.isNotEmpty()) Etiqueta(campo.seccion)
+        CampoTexto(
+            etiqueta = campo.etiqueta,
+            placeholder = if (campo.ejemplo > 0) miles(campo.ejemplo) else "0",
+            valor = if (valor > 0) valor.toString() else "",
+            onCambio = onCambio,
+            teclado = KeyboardType.Number,
+            transformacion = if (campo.soloCantidad) VisualTransformation.None else MilesTransformation,
+        )
+        Text(
+            buildAnnotatedString {
+                append(campo.ayuda)
+                if (valor > 0) {
+                    append(" · ")
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(if (campo.soloCantidad) valor.toString() else fm(valor.toDouble()))
+                    }
+                }
+            },
+            fontSize = 12.sp,
+            color = RC.Label,
+        )
     }
 }

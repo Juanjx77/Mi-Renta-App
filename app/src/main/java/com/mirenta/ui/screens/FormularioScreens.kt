@@ -139,8 +139,8 @@ fun DetalleScreen(onBack: () -> Unit) {
 
 @Composable
 fun VerificarScreen(vm: RentaViewModel, onBack: () -> Unit, onNav: (String) -> Unit) {
-    val o = vm.resultado
-    val hallazgos = remember(vm.entradas) { ValidacionesNegocio.validar(vm.entradas) }
+    val o = vm.resultadoDeclaracion
+    val hallazgos = remember(vm.declaracion) { ValidacionesNegocio.validar(vm.declaracion) }
     val tieneErrores = hallazgos.any { it.severidad == Severidad.ERROR }
     val tieneAdvertencias = hallazgos.any { it.severidad == Severidad.ADVERTENCIA }
 
@@ -217,7 +217,7 @@ fun VerificarScreen(vm: RentaViewModel, onBack: () -> Unit, onNav: (String) -> U
             filas = listOf(
                 Fila("Renta líquida gravable", fm(o.rentaGravable)),
                 Fila("Impuesto a cargo", fm(o.impuesto)),
-                Fila("Retenciones", fm(vm.entradas.retenciones.toDouble())),
+                Fila("Retenciones", fm(vm.declaracion.retenciones.toDouble())),
                 Fila(if (o.saldo < 0) "Saldo a favor" else "Saldo a pagar", fm(abs(o.saldo)), negrita = true),
             ),
         )

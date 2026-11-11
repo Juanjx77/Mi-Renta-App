@@ -14,7 +14,6 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DirectionsCar
-import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Paid
@@ -41,12 +40,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mirenta.domain.Campo
 import com.mirenta.domain.PerfilDatos
+import com.mirenta.domain.Reglas2025
 import com.mirenta.domain.Validadores
 import com.mirenta.ui.PerfilViewModel
+import com.mirenta.ui.RentaViewModel
 import com.mirenta.ui.components.Aviso
 import com.mirenta.ui.components.AvisoTipo
 import com.mirenta.ui.components.BotonPrimario
+import com.mirenta.ui.components.CampoEntrada
 import com.mirenta.ui.components.CampoTexto
 import com.mirenta.ui.components.Etiqueta
 import com.mirenta.ui.components.Fila
@@ -58,6 +61,7 @@ import com.mirenta.ui.components.Selector
 import com.mirenta.ui.components.Tarjeta
 import com.mirenta.ui.theme.MiRentaTheme
 import com.mirenta.ui.theme.RC
+import com.mirenta.util.fm
 
 @Composable
 fun DatosScreen(
@@ -203,31 +207,57 @@ fun PatrimonioScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun DeduccionesScreen(onBack: () -> Unit) {
-    val mostrar = LocalShowMessage.current
+fun DeduccionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit) {
+    val e = vm.declaracion
+    val o = vm.resultadoDeclaracion
+    var intento by remember { mutableStateOf(false) }
+
+    val tieneNegativos = e.aportes < 0 || e.vivienda < 0 || e.dependientes < 0 || e.prepagada < 0 || e.afc < 0
+
     ScreenScaffold(
         titulo = "Deducciones y rentas exentas",
-        sub = "Cédula general · cifras de ejemplo",
+        sub = "Cédula general · año gravable 2025",
         onBack = onBack,
         footer = {
-            BotonPrimario("Agregar beneficio", Icons.Outlined.Add) {
-                mostrar("Formulario de beneficio (sin mockup)")
+            if (intento && tieneNegativos) {
+                Aviso(AvisoTipo.Alerta, texto = "No se permiten montos negativos en las deducciones.")
+                Spacer(Modifier.height(4.dp))
+            }
+            BotonPrimario("Guardar", Icons.Outlined.Check) {
+                intento = true
+                if (!tieneNegativos) {
+                    onGuardar()
+                }
             }
         },
     ) {
+        if (o.beneficios >= o.limite && o.limite > 0) {
+            Aviso(AvisoTipo.Info, texto = "Has alcanzado el límite máximo de deducciones y rentas exentas (40% o 1.340 UVT).")
+        }
+
+        if (e.dependientes > Reglas2025.maxDependientes.valor.toLong()) {
+            Aviso(AvisoTipo.Alerta, texto = "Has declarado más de los ${Reglas2025.maxDependientes.valor.toInt()} dependientes permitidos. Solo se contabilizarán hasta este máximo.")
+        }
+
+        listOf(Campo.Aportes, Campo.Vivienda, Campo.Dependientes, Campo.Prepagada, Campo.Afc).forEach { c ->
+            CampoEntrada(
+                campo = c,
+                valor = e[c],
+                onCambio = { t ->
+                    val num = t.filter { it.isDigit() }.take(12).toLongOrNull() ?: 0L
+                    vm.cambiarDeclaracion(c, num)
+                }
+            )
+        }
+
         FilasCard(
-            listOf(
-                Fila("Renta exenta laboral 25%", "$ 27.330.000", "Automática · tope 790 UVT anuales", Icons.Outlined.Percent),
-                Fila("Intereses de vivienda", "$ 3.000.000", icono = Icons.Outlined.Home),
-                Fila("Dependientes", "$ 0", "Ninguno registrado", Icons.Outlined.Groups),
-                Fila("Salud prepagada", "$ 0", icono = Icons.Outlined.Favorite),
-                Fila("Aportes AFC o pensión voluntaria", "$ 0", icono = Icons.Outlined.Paid),
-                Fila("Compras con factura electrónica (1%)", "$ 0", icono = Icons.Outlined.Receipt),
-                Fila("Total beneficios", "$ 30.330.000", negrita = true),
+            encabezado = "RESUMEN DE BENEFICIOS",
+            filas = listOf(
+                Fila("Deducciones", fm(o.deducciones)),
+                Fila("Renta exenta", fm(o.exenta)),
+                Fila("Beneficios aplicados", fm(o.beneficios), negrita = true),
+                Fila("Límite", fm(o.limite)),
             ),
-        )
-        FilasCard(
-            listOf(Fila("Límite 40% o 1.340 UVT", "61% usado", "Usado $ 30.330.000 de $ 49.968.000")),
         )
     }
 }
@@ -299,7 +329,7 @@ private fun PatrimonioPreview() = MiRentaTheme { PatrimonioScreen {} }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun DeduccionesPreview() = MiRentaTheme { DeduccionesScreen {} }
+private fun DeduccionesPreview() = MiRentaTheme { DeduccionesScreen(RentaViewModel(), {}, {}) }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable

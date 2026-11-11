@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.FactCheck
+import androidx.compose.material.icons.outlined.Paid
 import androidx.compose.material.icons.outlined.Percent
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Receipt
@@ -41,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mirenta.domain.Entradas
 import com.mirenta.navigation.Rutas
 import com.mirenta.ui.AuthViewModel
 import com.mirenta.ui.PerfilViewModel
@@ -71,9 +73,9 @@ fun InicioScreen(
     val primerNombre = perfil.nombre.trim().split(Regex("\\s+")).firstOrNull()?.takeIf { it.isNotBlank() }
     val tituloHola = if (primerNombre != null) "Hola, $primerNombre" else "Hola"
 
-    val v = vm.entradas
-    val o = vm.resultado
-    val vacio = !vm.calculado && v == com.mirenta.domain.Entradas()
+    val v = vm.declaracion
+    val o = vm.resultadoDeclaracion
+    val vacio = v == Entradas()
 
     val saldoStr = if (vacio) "$ 0" else fm(abs(o.saldo))
     val ingresosStr = if (vacio) "$ 0" else fm(o.laborales + o.capital)
@@ -83,6 +85,9 @@ fun InicioScreen(
 
     val perfilCompleto = perfil.nombre.isNotBlank() && perfil.numeroDocumento.isNotBlank()
     val pillDatos = if (perfilCompleto) "Completo" to PillTipo.Ok else "Pendiente" to PillTipo.Aviso
+    val pillIngresos = if (v.salario + v.honorarios + v.arriendos + v.intereses > 0) "Completo" to PillTipo.Ok else "Pendiente" to PillTipo.Aviso
+    val tieneDeducciones = v.aportes > 0 || v.vivienda > 0 || v.dependientes > 0 || v.prepagada > 0 || v.afc > 0
+    val pillDeducciones = if (tieneDeducciones) "Completo" to PillTipo.Ok else "Sin beneficios" to PillTipo.Neutro
 
     var mostrarDialogoLogout by remember { mutableStateOf(false) }
 
@@ -137,6 +142,7 @@ fun InicioScreen(
         FilasCard(
             onNav = onNav,
             filas = listOf(
+                Fila("Ingresos", icono = Icons.Outlined.Paid, pill = pillIngresos, destino = Rutas.Ingresos),
                 Fila("Datos personales", icono = Icons.Outlined.Person, pill = pillDatos, destino = Rutas.Datos),
                 Fila("Patrimonio", icono = Icons.Outlined.AccountBalance, pill = "Completo" to PillTipo.Ok, destino = Rutas.Patrimonio),
                 Fila(
@@ -147,7 +153,7 @@ fun InicioScreen(
                 ),
                 Fila("Simulador", icono = Icons.Outlined.Percent, pill = "Pruébalo" to PillTipo.Neutro, destino = Rutas.Simulador),
                 Fila("Soportes", icono = Icons.Outlined.AttachFile, pill = "1 faltante" to PillTipo.Aviso, destino = Rutas.Soportes),
-                Fila("Deducciones", icono = Icons.Outlined.Percent, pill = "Pendiente" to PillTipo.Aviso, destino = Rutas.Deducciones),
+                Fila("Deducciones", icono = Icons.Outlined.Percent, pill = pillDeducciones, destino = Rutas.Deducciones),
                 Fila("Retenciones", icono = Icons.Outlined.Receipt, pill = "Sin iniciar" to PillTipo.Neutro, destino = Rutas.Retenciones),
             ),
         )

@@ -7,23 +7,40 @@ import androidx.lifecycle.ViewModel
 import com.mirenta.domain.Campo
 import com.mirenta.domain.Entradas
 import com.mirenta.domain.Resultado
+import com.mirenta.domain.ResultadoImportacion
 import com.mirenta.domain.TaxCalculator
 
 /** Estado compartido entre pantallas (exógena + simulador). */
 class RentaViewModel : ViewModel() {
     var exogena by mutableStateOf<String?>(null)
         private set
-    var entradas by mutableStateOf(Entradas())
+    var declaracion by mutableStateOf(Entradas())
+        private set
+    var simulacion by mutableStateOf(Entradas())
         private set
     var calculado by mutableStateOf(false)
         private set
 
-    val resultado: Resultado get() = TaxCalculator.calcular(entradas)
+    val resultadoDeclaracion: Resultado get() = TaxCalculator.calcular(declaracion)
+    val resultadoSimulacion: Resultado get() = TaxCalculator.calcular(simulacion)
 
     /** Lectura simulada: precarga las cifras de ejemplo, como en el prototipo. */
     fun cargarExogena(nombre: String) {
         exogena = nombre
-        entradas = Entradas.Ejemplo
+        declaracion = Entradas.Ejemplo
+    }
+
+    fun aplicarExogena(nombreArchivo: String, r: ResultadoImportacion) {
+        if (r.errores.isNotEmpty()) return
+        exogena = nombreArchivo
+        declaracion = declaracion.copy(
+            salario = r.salario,
+            honorarios = r.honorarios,
+            arriendos = r.arriendos,
+            intereses = r.intereses,
+            aportes = r.aportes,
+            retenciones = r.retenciones
+        )
     }
 
     fun quitarExogena() {
@@ -31,8 +48,12 @@ class RentaViewModel : ViewModel() {
     }
 
     fun cambiar(campo: Campo, valor: Long) {
-        entradas = entradas.con(campo, valor)
+        simulacion = simulacion.con(campo, valor)
         calculado = false
+    }
+
+    fun cambiarDeclaracion(campo: Campo, valor: Long) {
+        declaracion = declaracion.con(campo, valor)
     }
 
     fun calcular() {
@@ -40,18 +61,24 @@ class RentaViewModel : ViewModel() {
     }
 
     fun cargarEjemplo() {
-        entradas = Entradas.Ejemplo
+        simulacion = Entradas.Ejemplo
         calculado = false
     }
 
     fun limpiar() {
-        entradas = Entradas()
+        simulacion = Entradas()
+        calculado = false
+    }
+
+    fun partirDeDeclaracion() {
+        simulacion = declaracion
         calculado = false
     }
 
     fun reiniciar() {
         exogena = null
-        entradas = Entradas()
+        declaracion = Entradas()
+        simulacion = Entradas()
         calculado = false
     }
 }

@@ -76,8 +76,8 @@ fun PdfScreen(vm: RentaViewModel, onBack: () -> Unit, onInicio: () -> Unit) {
 
 @Composable
 fun DocumentoCard(vm: RentaViewModel, esPdf: Boolean) {
-    val v = vm.entradas
-    val o = vm.resultado
+    val v = vm.declaracion
+    val o = vm.resultadoDeclaracion
     val fecha = remember { SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("es-CO")).format(Date()) }
     Column(
         Modifier
