@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mirenta.data.PerfilRepository
 import com.mirenta.domain.PerfilDatos
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,6 +55,8 @@ class PerfilViewModel(
                 repository.guardarPerfil(perfilAGuardar)
                 perfil = perfilAGuardar
                 onExito()
+            } catch (e: TimeoutCancellationException) {
+                _errorRed.value = "Sin conexión estable: tus cambios se enviarán cuando vuelva internet."
             } catch (e: Exception) {
                 _errorRed.value = "Error al guardar los datos. Verifica tu conexión a internet."
             } finally {

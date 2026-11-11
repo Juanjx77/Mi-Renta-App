@@ -48,4 +48,10 @@ class RentaViewModel : ViewModel() {
         entradas = Entradas()
         calculado = false
     }
+
+    fun reiniciar() {
+        exogena = null
+        entradas = Entradas()
+        calculado = false
+    }
 }

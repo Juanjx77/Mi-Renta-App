@@ -160,8 +160,10 @@ fun MiRentaApp() {
                             authViewModel = authVm,
                             onNav = { ir(it) },
                             onLogout = {
+                                vm.reiniciar()
                                 nav.navigate(Rutas.Login) {
-                                    popUpTo(nav.graph.id) { inclusive = true }
+                                    popUpTo(0) { inclusive = true }
+                                    launchSingleTop = true
                                 }
                             },
                         )
