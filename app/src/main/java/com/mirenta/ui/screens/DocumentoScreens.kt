@@ -1,84 +1,133 @@
 package com.mirenta.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mirenta.domain.DocumentoDeclaracion
+import com.mirenta.domain.PerfilDatos
+import com.mirenta.domain.Severidad
+import com.mirenta.domain.ValidacionesNegocio
 import com.mirenta.navigation.Rutas
+import com.mirenta.ui.PerfilViewModel
 import com.mirenta.ui.RentaViewModel
+import com.mirenta.ui.components.Aviso
+import com.mirenta.ui.components.AvisoTipo
 import com.mirenta.ui.components.BotonContorno
 import com.mirenta.ui.components.BotonPrimario
 import com.mirenta.ui.components.LocalShowMessage
 import com.mirenta.ui.components.ScreenScaffold
 import com.mirenta.ui.theme.MiRentaTheme
 import com.mirenta.ui.theme.RC
-import com.mirenta.util.dec
-import com.mirenta.util.fm
+import com.mirenta.util.PdfGenerador
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.abs
 
 @Composable
-fun VistaScreen(vm: RentaViewModel, onBack: () -> Unit, onNav: (String) -> Unit) {
-    val mostrar = LocalShowMessage.current
+fun VistaScreen(vm: RentaViewModel, perfil: PerfilDatos, onBack: () -> Unit, onNav: (String) -> Unit) {
     ScreenScaffold(
         titulo = "Vista previa del documento",
-        sub = "Generado con tus datos del simulador",
+        sub = "Generado con tus datos de la declaración",
         onBack = onBack,
         footer = {
             BotonPrimario("Descargar PDF", Icons.Outlined.Download) { onNav(Rutas.Pdf) }
-            BotonContorno("Compartir", Icons.Outlined.Share) {
-                mostrar("Hoja de compartir del sistema (sin mockup)")
-            }
         },
     ) {
-        DocumentoCard(vm, esPdf = false)
+        DocumentoCard(vm, perfil)
     }
 }
 
 @Composable
-fun PdfScreen(vm: RentaViewModel, onBack: () -> Unit, onInicio: () -> Unit) {
+fun PdfScreen(vm: RentaViewModel, perfil: PerfilDatos, onBack: () -> Unit, onInicio: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val mostrar = LocalShowMessage.current
+    val v = vm.declaracion
+    val o = vm.resultadoDeclaracion
+    val hallazgos = remember(v) { ValidacionesNegocio.validar(v) }
+    val tieneErrores = hallazgos.any { it.severidad == Severidad.ERROR }
+    val fecha = remember { SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("es-CO")).format(Date()) }
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val secciones = DocumentoDeclaracion.generar(v, o, hallazgos, perfil, fecha)
+                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        PdfGenerador.generarPdf(secciones, outputStream)
+                    }
+                    scope.launch(Dispatchers.Main) {
+                        mostrar("PDF guardado exitosamente")
+                    }
+                } catch (e: Exception) {
+                    scope.launch(Dispatchers.Main) {
+                        mostrar("Error al generar el PDF: ${e.localizedMessage}")
+                    }
+                }
+            }
+        }
+    }
+
     ScreenScaffold(
         titulo = "PDF generado",
-        sub = "Declaración de renta · 1 página",
+        sub = "Declaración de renta · Borrador 2025",
         onBack = onBack,
         footer = {
-            BotonPrimario("Guardar como PDF", Icons.Outlined.Download) {
-                // TODO: generar el archivo con android.graphics.pdf.PdfDocument o PrintManager
-                mostrar("Pendiente: exportar a PDF")
+            if (tieneErrores) {
+                Aviso(AvisoTipo.Alerta, texto = "No se puede generar el PDF porque hay errores de validación sin corregir.")
+                Spacer(Modifier.height(4.dp))
             }
+            BotonPrimario(
+                "Guardar como PDF",
+                Icons.Outlined.Download,
+                onClick = {
+                    if (!tieneErrores) {
+                        launcher.launch("MiRenta_borrador_2025.pdf")
+                    }
+                }
+            )
             BotonContorno("Volver al inicio", Icons.Outlined.Home, onClick = onInicio)
         },
     ) {
-        DocumentoCard(vm, esPdf = true)
+        DocumentoCard(vm, perfil)
     }
 }
 
 @Composable
-fun DocumentoCard(vm: RentaViewModel, esPdf: Boolean) {
+fun DocumentoCard(vm: RentaViewModel, perfil: PerfilDatos?) {
     val v = vm.declaracion
     val o = vm.resultadoDeclaracion
+    val hallazgos = remember(v) { ValidacionesNegocio.validar(v) }
     val fecha = remember { SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("es-CO")).format(Date()) }
+    val secciones = remember(v, o, hallazgos, perfil, fecha) {
+        DocumentoDeclaracion.generar(v, o, hallazgos, perfil, fecha)
+    }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -86,100 +135,38 @@ fun DocumentoCard(vm: RentaViewModel, esPdf: Boolean) {
             .border(1.dp, Color(0xFFCDD5DF))
             .padding(14.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Mi Renta", color = RC.Green, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            if (!esPdf) {
-                Box(Modifier.border(1.dp, Color(0xFF8A99AD)).padding(horizontal = 6.dp)) {
-                    Text("BORRADOR", fontSize = 11.sp)
+        secciones.forEach { seccion ->
+            Text(
+                seccion.titulo,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = RC.Green,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+            )
+            seccion.lineas.forEach { linea ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(linea.etiqueta, fontSize = 12.sp, lineHeight = 18.sp, modifier = Modifier.weight(1f), color = RC.Label)
+                    Text(linea.valor, fontSize = 12.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
+            HorizontalDivider(color = RC.Border, modifier = Modifier.padding(vertical = 6.dp))
         }
-        Text(
-            "Simulación de declaración de renta · Personas naturales",
-            fontWeight = FontWeight.Bold,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
-        )
-        Text("Formulario 210 · AG 2025 · Generado el $fecha", fontSize = 12.sp, color = RC.Label)
-        Sep()
-        Sec("1. Contribuyente")
-        Txt("[Nombre y apellidos] · [Documento]")
-        Sep()
-        Sec("2. Datos que ingresaste")
-        Dr("Salario", fm(v.salario.toDouble()))
-        Dr("Honorarios", fm(v.honorarios.toDouble()))
-        Dr("Arriendos", fm(v.arriendos.toDouble()))
-        Dr("Intereses financieros", fm(v.intereses.toDouble()))
-        Dr("Aportes a salud y pensión", fm(v.aportes.toDouble()))
-        Dr("Intereses de vivienda", fm(v.vivienda.toDouble()))
-        Dr("Dependientes", v.dependientes.toString())
-        Dr("Salud prepagada", fm(v.prepagada.toDouble()))
-        Dr("AFC / pensión voluntaria", fm(v.afc.toDouble()))
-        Dr("Retenciones", fm(v.retenciones.toDouble()))
-        Dr("Consumos y compras", fm(v.consumos.toDouble()))
-        Sep()
-        Sec("3. Depuración")
-        Dr("Ingresos laborales", fm(o.laborales))
-        Dr("(−) No constitutivos de renta", fm(o.noConstitutivos))
-        Dr("(−) Deducciones", fm(o.deducciones))
-        Dr("(−) Renta exenta 25%", fm(o.exenta))
-        Dr("Renta líquida de trabajo", fm(o.rentaLiquidaTrabajo))
-        Dr("(+) Rentas de capital", fm(o.capital))
-        Dr("Renta gravable", fm(o.rentaGravable) + " · " + dec(o.uvt, 2) + " UVT")
-        Sep()
-        Sec("4. Liquidación")
-        Dr("Impuesto a cargo", fm(o.impuesto))
-        Dr("(−) Retenciones", fm(v.retenciones.toDouble()))
-        Dr(if (o.saldo < 0) "Saldo a favor" else "Saldo a pagar", fm(abs(o.saldo)))
-        Dr("Tarifa efectiva", dec(o.tarifaEfectiva * 100, 1) + "%")
-        Sep()
-        Sec("5. Patrimonio")
-        Dr("Bruto", fm(v.patrimonio.toDouble()))
-        Dr("Deudas", fm(v.deudas.toDouble()))
-        Dr("Líquido", fm(o.patrimonioLiquido))
-        Sep()
-        Sec("6. ¿Debes declarar?")
-        Txt(if (o.motivos.isNotEmpty()) "Sí, por: " + o.motivos.joinToString("; ") + "." else "Con estos datos no superas ningún tope.")
-        Sep()
-        Sec("7. Información exógena")
-        Txt(if (vm.exogena != null) "${vm.exogena} (cargada)" else "No cargada. Súbela para contrastar tus cifras.")
-        Sep()
-        Text(
-            "UVT 2025: $ 49.799. Simulación con fórmulas simplificadas. No reemplaza la asesoría de un contador ni la presentación en el portal de la DIAN.",
-            fontSize = 12.sp,
-            color = RC.Label,
-        )
-    }
-}
-
-@Composable
-private fun Sep() = HorizontalDivider(color = RC.Border, modifier = Modifier.padding(vertical = 8.dp))
-
-@Composable
-private fun Sec(t: String) = Text(t, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 18.sp)
-
-@Composable
-private fun Txt(t: String) = Text(t, fontSize = 12.sp, lineHeight = 18.sp)
-
-@Composable
-private fun Dr(a: String, b: String) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(a, fontSize = 12.sp, lineHeight = 18.sp, modifier = Modifier.weight(1f))
-        Text(b, fontSize = 12.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold)
+        val exogenaTexto = if (vm.exogena != null) "${vm.exogena} (plantilla de ejemplo cargada)" else "No se ha cargado plantilla de exógena (es una plantilla de ejemplo de MiRenta)."
+        Text("Exógena: $exogenaTexto", fontSize = 12.sp, color = RC.Label, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 1400)
 @Composable
 private fun VistaPreview() = MiRentaTheme {
-    VistaScreen(RentaViewModel().apply { cargarExogena("exogena_2025_ejemplo.xlsx") }, {}, {})
+    VistaScreen(RentaViewModel().apply { cargarExogena("exogena_2025_ejemplo.xlsx") }, PerfilDatos(nombre = "Juan Pérez"), {}, {})
 }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 1400)
 @Composable
 private fun PdfPreview() = MiRentaTheme {
-    PdfScreen(RentaViewModel().apply { cargarEjemplo() }, {}, {})
+    PdfScreen(RentaViewModel().apply { cargarEjemplo() }, PerfilDatos(nombre = "Juan Pérez"), {}, {})
 }

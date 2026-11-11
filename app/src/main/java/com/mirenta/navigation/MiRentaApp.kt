@@ -38,6 +38,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mirenta.data.AuthRepository
 import com.mirenta.ui.AuthViewModel
+import com.mirenta.ui.PerfilViewModel
 import com.mirenta.ui.RentaViewModel
 import com.mirenta.ui.components.LocalShowMessage
 import com.mirenta.ui.screens.AprendeScreen
@@ -65,6 +66,7 @@ fun MiRentaApp() {
     val nav = rememberNavController()
     val vm: RentaViewModel = viewModel()
     val authVm: AuthViewModel = viewModel()
+    val perfilVm: PerfilViewModel = viewModel()
     val authRepo = remember { AuthRepository() }
     val startDestination = remember {
         if (authRepo.usuarioActual != null) Rutas.Inicio else Rutas.Login
@@ -134,6 +136,7 @@ fun MiRentaApp() {
                             authViewModel = authVm,
                             onIngresar = {
                                 vm.cargar()
+                                perfilVm.cargar()
                                 nav.navigate(Rutas.Inicio) {
                                     popUpTo(Rutas.Login) { inclusive = true }
                                 }
@@ -147,6 +150,7 @@ fun MiRentaApp() {
                             onBack = { volver() },
                             onCrear = {
                                 vm.cargar()
+                                perfilVm.cargar()
                                 nav.navigate(Rutas.Inicio) {
                                     popUpTo(Rutas.Login) { inclusive = true }
                                 }
@@ -164,6 +168,7 @@ fun MiRentaApp() {
                         InicioScreen(
                             vm = vm,
                             authViewModel = authVm,
+                            perfilViewModel = perfilVm,
                             onNav = { ir(it) },
                             onLogout = {
                                 vm.reiniciar()
@@ -193,10 +198,10 @@ fun MiRentaApp() {
                         VerificarScreen(vm, onBack = { volver() }, onNav = { ir(it) })
                     }
                     composable(Rutas.Vista) {
-                        VistaScreen(vm, onBack = { volver() }, onNav = { ir(it) })
+                        VistaScreen(vm, perfilVm.perfil, onBack = { volver() }, onNav = { ir(it) })
                     }
                     composable(Rutas.Pdf) {
-                        PdfScreen(vm, onBack = { volver() }, onInicio = { irAInicio() })
+                        PdfScreen(vm, perfilVm.perfil, onBack = { volver() }, onInicio = { irAInicio() })
                     }
                 }
                 if (!conBarra) {
