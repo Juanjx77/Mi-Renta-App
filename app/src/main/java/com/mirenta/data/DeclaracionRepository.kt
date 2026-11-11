@@ -19,6 +19,7 @@ class DeclaracionRepository(
             .get()
             .await()
         val map = snapshot.data ?: return null
+        val seccionesList = (map["seccionesGuardadas"] as? List<*>)?.mapNotNull { it as? String }?.toSet() ?: emptySet()
         return Entradas(
             salario = (map["salario"] as? Number)?.toLong() ?: 0L,
             honorarios = (map["honorarios"] as? Number)?.toLong() ?: 0L,
@@ -32,7 +33,8 @@ class DeclaracionRepository(
             retenciones = (map["retenciones"] as? Number)?.toLong() ?: 0L,
             patrimonio = (map["patrimonio"] as? Number)?.toLong() ?: 0L,
             deudas = (map["deudas"] as? Number)?.toLong() ?: 0L,
-            consumos = (map["consumos"] as? Number)?.toLong() ?: 0L
+            consumos = (map["consumos"] as? Number)?.toLong() ?: 0L,
+            seccionesGuardadas = seccionesList
         )
     }
 
@@ -51,7 +53,8 @@ class DeclaracionRepository(
             "retenciones" to entradas.retenciones,
             "patrimonio" to entradas.patrimonio,
             "deudas" to entradas.deudas,
-            "consumos" to entradas.consumos
+            "consumos" to entradas.consumos,
+            "seccionesGuardadas" to entradas.seccionesGuardadas.toList()
         )
         withTimeout(10_000) {
             firestore.collection("users")

@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mirenta.domain.Campo
 import com.mirenta.domain.PerfilDatos
 import com.mirenta.domain.Reglas2025
+import com.mirenta.domain.SeccionesDeclaracion
 import com.mirenta.domain.Validadores
 import com.mirenta.ui.PerfilViewModel
 import com.mirenta.ui.RentaViewModel
@@ -195,7 +196,7 @@ fun PatrimonioScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Un
             BotonPrimario("Guardar", Icons.Outlined.Check) {
                 intento = true
                 if (!esVacio && !tieneNegativos) {
-                    vm.guardar {
+                    vm.guardarSeccion(SeccionesDeclaracion.Patrimonio) {
                         onGuardar()
                     }
                 }
@@ -287,7 +288,7 @@ fun DeduccionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
             BotonPrimario("Guardar", Icons.Outlined.Check) {
                 intento = true
                 if (!tieneNegativos) {
-                    vm.guardar {
+                    vm.guardarSeccion(SeccionesDeclaracion.Deducciones) {
                         onGuardar()
                     }
                 }
@@ -351,7 +352,7 @@ fun RetencionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
             BotonPrimario("Guardar", Icons.Outlined.Check) {
                 intento = true
                 if (!tieneNegativos) {
-                    vm.guardar {
+                    vm.guardarSeccion(SeccionesDeclaracion.Retenciones) {
                         onGuardar()
                     }
                 }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mirenta.domain.Campo
+import com.mirenta.domain.SeccionesDeclaracion
 import com.mirenta.ui.RentaViewModel
 import com.mirenta.ui.components.Aviso
 import com.mirenta.ui.components.AvisoTipo
@@ -26,6 +27,7 @@ fun IngresosScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit
     val errorRed by vm.errorRed.collectAsState()
     var intento by remember { mutableStateOf(false) }
 
+    val todosCero = e.salario == 0L && e.honorarios == 0L && e.arriendos == 0L && e.intereses == 0L
     val tieneNegativos = e.salario < 0 || e.honorarios < 0 || e.arriendos < 0 || e.intereses < 0
 
     ScreenScaffold(
@@ -37,14 +39,15 @@ fun IngresosScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit
                 Aviso(AvisoTipo.Alerta, negrita = "Error de red: ", texto = errorRed!!)
                 Spacer(Modifier.height(4.dp))
             }
-            if (intento && tieneNegativos) {
-                Aviso(AvisoTipo.Alerta, texto = "No se permiten montos negativos en los ingresos.")
+            if (intento && (todosCero || tieneNegativos)) {
+                val mensaje = if (todosCero) "Debes ingresar al menos un valor de ingresos." else "No se permiten montos negativos en los ingresos."
+                Aviso(AvisoTipo.Alerta, texto = mensaje)
                 Spacer(Modifier.height(4.dp))
             }
             BotonPrimario("Guardar", Icons.Outlined.Check) {
                 intento = true
-                if (!tieneNegativos) {
-                    vm.guardar {
+                if (!todosCero && !tieneNegativos) {
+                    vm.guardarSeccion(SeccionesDeclaracion.Ingresos) {
                         onGuardar()
                     }
                 }

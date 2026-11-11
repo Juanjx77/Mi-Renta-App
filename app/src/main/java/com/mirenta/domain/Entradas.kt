@@ -1,5 +1,12 @@
 package com.mirenta.domain
 
+object SeccionesDeclaracion {
+    const val Ingresos = "Ingresos"
+    const val Patrimonio = "Patrimonio"
+    const val Deducciones = "Deducciones"
+    const val Retenciones = "Retenciones"
+}
+
 /** Campos que el usuario puede editar en el simulador. */
 enum class Campo(
     val seccion: String,
@@ -37,6 +44,7 @@ data class Entradas(
     val patrimonio: Long = 0,
     val deudas: Long = 0,
     val consumos: Long = 0,
+    val seccionesGuardadas: Set<String> = emptySet(),
 ) {
     operator fun get(c: Campo): Long = when (c) {
         Campo.Salario -> salario

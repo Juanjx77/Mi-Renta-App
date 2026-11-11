@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mirenta.domain.Entradas
+import com.mirenta.domain.ProgresoCalculador
+import com.mirenta.domain.SeccionesDeclaracion
 import com.mirenta.navigation.Rutas
 import com.mirenta.ui.AuthViewModel
 import com.mirenta.ui.PerfilViewModel
@@ -85,12 +87,12 @@ fun InicioScreen(
 
     val perfilCompleto = perfil.nombre.isNotBlank() && perfil.numeroDocumento.isNotBlank()
     val pillDatos = if (perfilCompleto) "Completo" to PillTipo.Ok else "Pendiente" to PillTipo.Aviso
-    val pillIngresos = if (v.salario + v.honorarios + v.arriendos + v.intereses > 0) "Completo" to PillTipo.Ok else "Pendiente" to PillTipo.Aviso
-    val tieneDeducciones = v.aportes > 0 || v.vivienda > 0 || v.dependientes > 0 || v.prepagada > 0 || v.afc > 0
-    val pillDeducciones = if (tieneDeducciones) "Completo" to PillTipo.Ok else "Sin beneficios" to PillTipo.Neutro
-    val tienePatrimonio = v.patrimonio > 0 || v.deudas > 0 || v.consumos > 0
-    val pillPatrimonio = if (tienePatrimonio) "Completo" to PillTipo.Ok else "Sin registrar" to PillTipo.Neutro
-    val pillRetenciones = if (v.retenciones > 0) "Completo" to PillTipo.Ok else "Sin retenciones" to PillTipo.Neutro
+    val pillIngresos = if (v.seccionesGuardadas.contains(SeccionesDeclaracion.Ingresos)) "Completo" to PillTipo.Ok else "Pendiente" to PillTipo.Aviso
+    val pillPatrimonio = if (v.seccionesGuardadas.contains(SeccionesDeclaracion.Patrimonio)) "Completo" to PillTipo.Ok else "Pendiente" to PillTipo.Aviso
+    val pillDeducciones = if (v.seccionesGuardadas.contains(SeccionesDeclaracion.Deducciones)) "Completo" to PillTipo.Ok else "Sin revisar" to PillTipo.Neutro
+    val pillRetenciones = if (v.seccionesGuardadas.contains(SeccionesDeclaracion.Retenciones)) "Completo" to PillTipo.Ok else "Sin revisar" to PillTipo.Neutro
+
+    val seccionesHechas = ProgresoCalculador.calcular(v.seccionesGuardadas, perfilCompleto)
 
     var mostrarDialogoLogout by remember { mutableStateOf(false) }
 
@@ -132,10 +134,10 @@ fun InicioScreen(
             Text(saldoStr, fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().height(10.dp).clip(CircleShape).background(RC.Divider)) {
-                Box(Modifier.fillMaxWidth(if (vacio) 0.0f else 0.64f).fillMaxHeight().clip(CircleShape).background(RC.Mid))
+                Box(Modifier.fillMaxWidth(seccionesHechas / 5f).fillMaxHeight().clip(CircleShape).background(RC.Mid))
             }
             Spacer(Modifier.height(6.dp))
-            Text("Progreso referencial (ejemplo) · 64% completo", fontSize = 14.sp)
+            Text("$seccionesHechas de 5 secciones completas", fontSize = 14.sp)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Dato("INGRESOS", ingresosStr, Modifier.weight(1f))

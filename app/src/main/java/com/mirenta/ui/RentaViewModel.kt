@@ -73,6 +73,11 @@ class RentaViewModel(
         }
     }
 
+    fun guardarSeccion(seccion: String, onExito: () -> Unit) {
+        declaracion = declaracion.copy(seccionesGuardadas = declaracion.seccionesGuardadas + seccion)
+        guardar(onExito)
+    }
+
     /** Lectura simulada: precarga las cifras de ejemplo, como en el prototipo. */
     fun cargarExogena(nombre: String) {
         exogena = nombre
