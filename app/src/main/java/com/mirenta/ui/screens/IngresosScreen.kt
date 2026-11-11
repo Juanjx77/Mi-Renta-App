@@ -1,12 +1,17 @@
 package com.mirenta.ui.screens
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.mirenta.domain.Campo
 import com.mirenta.ui.RentaViewModel
 import com.mirenta.ui.components.Aviso
@@ -18,6 +23,7 @@ import com.mirenta.ui.components.ScreenScaffold
 @Composable
 fun IngresosScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit) {
     val e = vm.declaracion
+    val errorRed by vm.errorRed.collectAsState()
     var intento by remember { mutableStateOf(false) }
 
     val tieneNegativos = e.salario < 0 || e.honorarios < 0 || e.arriendos < 0 || e.intereses < 0
@@ -27,13 +33,20 @@ fun IngresosScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit
         sub = "Bloque de ingresos brutos (laborales y de capital)",
         onBack = onBack,
         footer = {
+            if (errorRed != null) {
+                Aviso(AvisoTipo.Alerta, negrita = "Error de red: ", texto = errorRed!!)
+                Spacer(Modifier.height(4.dp))
+            }
             if (intento && tieneNegativos) {
                 Aviso(AvisoTipo.Alerta, texto = "No se permiten montos negativos en los ingresos.")
+                Spacer(Modifier.height(4.dp))
             }
             BotonPrimario("Guardar", Icons.Outlined.Check) {
                 intento = true
                 if (!tieneNegativos) {
-                    onGuardar()
+                    vm.guardar {
+                        onGuardar()
+                    }
                 }
             }
         },

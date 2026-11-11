@@ -133,6 +133,7 @@ fun MiRentaApp() {
                         LoginScreen(
                             authViewModel = authVm,
                             onIngresar = {
+                                vm.cargar()
                                 nav.navigate(Rutas.Inicio) {
                                     popUpTo(Rutas.Login) { inclusive = true }
                                 }
@@ -145,6 +146,7 @@ fun MiRentaApp() {
                             authViewModel = authVm,
                             onBack = { volver() },
                             onCrear = {
+                                vm.cargar()
                                 nav.navigate(Rutas.Inicio) {
                                     popUpTo(Rutas.Login) { inclusive = true }
                                 }

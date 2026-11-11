@@ -9,12 +9,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.DirectionsCar
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material.icons.outlined.Work
@@ -171,8 +168,14 @@ fun DatosScreen(
 fun PatrimonioScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit) {
     val e = vm.declaracion
     val o = vm.resultadoDeclaracion
+    val errorRed by vm.errorRed.collectAsState()
     var intento by remember { mutableStateOf(false) }
 
+    var patStr by remember(e.patrimonio) { mutableStateOf(if (e.patrimonio > 0) e.patrimonio.toString() else "") }
+    var deuStr by remember(e.deudas) { mutableStateOf(if (e.deudas > 0) e.deudas.toString() else "") }
+    var conStr by remember(e.consumos) { mutableStateOf(if (e.consumos > 0) e.consumos.toString() else "") }
+
+    val esVacio = patStr.isBlank() || deuStr.isBlank() || conStr.isBlank()
     val tieneNegativos = e.patrimonio < 0 || e.deudas < 0 || e.consumos < 0
 
     ScreenScaffold(
@@ -180,14 +183,21 @@ fun PatrimonioScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Un
         sub = "Al 31 de diciembre de 2025",
         onBack = onBack,
         footer = {
-            if (intento && tieneNegativos) {
-                Aviso(AvisoTipo.Alerta, texto = "No se permiten montos negativos en el patrimonio.")
+            if (errorRed != null) {
+                Aviso(AvisoTipo.Alerta, negrita = "Error de red: ", texto = errorRed!!)
+                Spacer(Modifier.height(4.dp))
+            }
+            if (intento && (esVacio || tieneNegativos)) {
+                val mensaje = if (esVacio) "Completa todos los campos antes de guardar." else "No se permiten montos negativos en el patrimonio."
+                Aviso(AvisoTipo.Alerta, texto = mensaje)
                 Spacer(Modifier.height(4.dp))
             }
             BotonPrimario("Guardar", Icons.Outlined.Check) {
                 intento = true
-                if (!tieneNegativos) {
-                    onGuardar()
+                if (!esVacio && !tieneNegativos) {
+                    vm.guardar {
+                        onGuardar()
+                    }
                 }
             }
         },
@@ -211,16 +221,35 @@ fun PatrimonioScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Un
             Aviso(AvisoTipo.Alerta, texto = "Atención: Tu patrimonio líquido es negativo (tus deudas superan a tu patrimonio bruto).")
         }
 
-        listOf(Campo.Patrimonio, Campo.Deudas, Campo.Consumos).forEach { c ->
-            CampoEntrada(
-                campo = c,
-                valor = e[c],
-                onCambio = { t ->
-                    val num = t.filter { it.isDigit() }.take(12).toLongOrNull() ?: 0L
-                    vm.cambiarDeclaracion(c, num)
-                }
-            )
-        }
+        CampoEntrada(
+            campo = Campo.Patrimonio,
+            valor = e.patrimonio,
+            onCambio = { t ->
+                val filtrado = t.filter { it.isDigit() }.take(12)
+                patStr = filtrado
+                vm.cambiarDeclaracion(Campo.Patrimonio, filtrado.toLongOrNull() ?: 0L)
+            }
+        )
+
+        CampoEntrada(
+            campo = Campo.Deudas,
+            valor = e.deudas,
+            onCambio = { t ->
+                val filtrado = t.filter { it.isDigit() }.take(12)
+                deuStr = filtrado
+                vm.cambiarDeclaracion(Campo.Deudas, filtrado.toLongOrNull() ?: 0L)
+            }
+        )
+
+        CampoEntrada(
+            campo = Campo.Consumos,
+            valor = e.consumos,
+            onCambio = { t ->
+                val filtrado = t.filter { it.isDigit() }.take(12)
+                conStr = filtrado
+                vm.cambiarDeclaracion(Campo.Consumos, filtrado.toLongOrNull() ?: 0L)
+            }
+        )
 
         FilasCard(
             encabezado = "RESUMEN PATRIMONIAL",
@@ -237,6 +266,7 @@ fun PatrimonioScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Un
 fun DeduccionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit) {
     val e = vm.declaracion
     val o = vm.resultadoDeclaracion
+    val errorRed by vm.errorRed.collectAsState()
     var intento by remember { mutableStateOf(false) }
 
     val tieneNegativos = e.aportes < 0 || e.vivienda < 0 || e.dependientes < 0 || e.prepagada < 0 || e.afc < 0
@@ -246,6 +276,10 @@ fun DeduccionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
         sub = "Cédula general · año gravable 2025",
         onBack = onBack,
         footer = {
+            if (errorRed != null) {
+                Aviso(AvisoTipo.Alerta, negrita = "Error de red: ", texto = errorRed!!)
+                Spacer(Modifier.height(4.dp))
+            }
             if (intento && tieneNegativos) {
                 Aviso(AvisoTipo.Alerta, texto = "No se permiten montos negativos en las deducciones.")
                 Spacer(Modifier.height(4.dp))
@@ -253,7 +287,9 @@ fun DeduccionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
             BotonPrimario("Guardar", Icons.Outlined.Check) {
                 intento = true
                 if (!tieneNegativos) {
-                    onGuardar()
+                    vm.guardar {
+                        onGuardar()
+                    }
                 }
             }
         },
@@ -294,6 +330,7 @@ fun DeduccionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
 fun RetencionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit) {
     val e = vm.declaracion
     val o = vm.resultadoDeclaracion
+    val errorRed by vm.errorRed.collectAsState()
     var intento by remember { mutableStateOf(false) }
 
     val tieneNegativos = e.retenciones < 0
@@ -303,6 +340,10 @@ fun RetencionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
         sub = "Bloque 5 de 5 · año gravable 2025",
         onBack = onBack,
         footer = {
+            if (errorRed != null) {
+                Aviso(AvisoTipo.Alerta, negrita = "Error de red: ", texto = errorRed!!)
+                Spacer(Modifier.height(4.dp))
+            }
             if (intento && tieneNegativos) {
                 Aviso(AvisoTipo.Alerta, texto = "No se permiten montos negativos en las retenciones.")
                 Spacer(Modifier.height(4.dp))
@@ -310,7 +351,9 @@ fun RetencionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
             BotonPrimario("Guardar", Icons.Outlined.Check) {
                 intento = true
                 if (!tieneNegativos) {
-                    onGuardar()
+                    vm.guardar {
+                        onGuardar()
+                    }
                 }
             }
         },
