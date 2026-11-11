@@ -14,12 +14,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DirectionsCar
-import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Paid
-import androidx.compose.material.icons.outlined.Percent
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material.icons.outlined.Work
@@ -62,6 +57,7 @@ import com.mirenta.ui.components.Tarjeta
 import com.mirenta.ui.theme.MiRentaTheme
 import com.mirenta.ui.theme.RC
 import com.mirenta.util.fm
+import kotlin.math.abs
 
 @Composable
 fun DatosScreen(
@@ -172,35 +168,66 @@ fun DatosScreen(
 }
 
 @Composable
-fun PatrimonioScreen(onBack: () -> Unit) {
-    val mostrar = LocalShowMessage.current
+fun PatrimonioScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit) {
+    val e = vm.declaracion
+    val o = vm.resultadoDeclaracion
+    var intento by remember { mutableStateOf(false) }
+
+    val tieneNegativos = e.patrimonio < 0 || e.deudas < 0 || e.consumos < 0
+
     ScreenScaffold(
         titulo = "Patrimonio",
-        sub = "Al 31 de diciembre de 2025 · cifras de ejemplo",
+        sub = "Al 31 de diciembre de 2025",
         onBack = onBack,
         footer = {
-            BotonPrimario("Agregar bien o deuda", Icons.Outlined.Add) {
-                mostrar("Formulario de bien o deuda (sin mockup)")
+            if (intento && tieneNegativos) {
+                Aviso(AvisoTipo.Alerta, texto = "No se permiten montos negativos en el patrimonio.")
+                Spacer(Modifier.height(4.dp))
+            }
+            BotonPrimario("Guardar", Icons.Outlined.Check) {
+                intento = true
+                if (!tieneNegativos) {
+                    onGuardar()
+                }
             }
         },
     ) {
+        Aviso(
+            AvisoTipo.Info,
+            texto = "Aquí registras totales. El detalle por bien no se guarda en esta versión."
+        )
+
+        val topePatrimonio = Reglas2025.topePatrimonioDeclararUvt.valor * Reglas2025.uvt.valor
+        if (e.patrimonio >= topePatrimonio) {
+            Aviso(AvisoTipo.Info, texto = "Tu patrimonio bruto supera el tope de ${fm(topePatrimonio)} (${Reglas2025.topePatrimonioDeclararUvt.valor.toInt()} UVT), lo que te obliga a declarar por patrimonio.")
+        }
+
+        val topeConsumos = Reglas2025.topeConsumosDeclararUvt.valor * Reglas2025.uvt.valor
+        if (e.consumos >= topeConsumos) {
+            Aviso(AvisoTipo.Info, texto = "Tus consumos superan el tope de ${fm(topeConsumos)} (${Reglas2025.topeConsumosDeclararUvt.valor.toInt()} UVT), lo que te obliga a declarar por consumos.")
+        }
+
+        if (o.patrimonioLiquido < 0) {
+            Aviso(AvisoTipo.Alerta, texto = "Atención: Tu patrimonio líquido es negativo (tus deudas superan a tu patrimonio bruto).")
+        }
+
+        listOf(Campo.Patrimonio, Campo.Deudas, Campo.Consumos).forEach { c ->
+            CampoEntrada(
+                campo = c,
+                valor = e[c],
+                onCambio = { t ->
+                    val num = t.filter { it.isDigit() }.take(12).toLongOrNull() ?: 0L
+                    vm.cambiarDeclaracion(c, num)
+                }
+            )
+        }
+
         FilasCard(
-            encabezado = "BIENES",
+            encabezado = "RESUMEN PATRIMONIAL",
             filas = listOf(
-                Fila("Inmueble", "$ 180.000.000", "[Dirección]", Icons.Outlined.Home),
-                Fila("Vehículo", "$ 35.000.000", "[Placa]", Icons.Outlined.DirectionsCar),
-                Fila("Cuenta bancaria", "$ 8.000.000", "[Banco]", Icons.Outlined.AccountBalance),
-            ),
-        )
-        FilasCard(
-            encabezado = "DEUDAS",
-            filas = listOf(Fila("Crédito hipotecario", "$ 90.000.000", "[Entidad]", Icons.Outlined.AccountBalance)),
-        )
-        FilasCard(
-            listOf(
-                Fila("Patrimonio bruto", "$ 223.000.000"),
-                Fila("Deudas", "$ 90.000.000"),
-                Fila("Patrimonio líquido", "$ 133.000.000", negrita = true),
+                Fila("Patrimonio bruto", fm(e.patrimonio.toDouble())),
+                Fila("Deudas", fm(e.deudas.toDouble())),
+                Fila("Patrimonio líquido", fm(o.patrimonioLiquido), negrita = true),
             ),
         )
     }
@@ -231,7 +258,7 @@ fun DeduccionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
             }
         },
     ) {
-        if (o.beneficios >= o.limite && o.limite > 0) {
+        if (o.topeAlcanzado) {
             Aviso(AvisoTipo.Info, texto = "Has alcanzado el límite máximo de deducciones y rentas exentas (40% o 1.340 UVT).")
         }
 
@@ -253,39 +280,70 @@ fun DeduccionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> U
         FilasCard(
             encabezado = "RESUMEN DE BENEFICIOS",
             filas = listOf(
-                Fila("Deducciones", fm(o.deducciones)),
+                Fila("Deducciones", fm(o.deducciones - o.dependientesValor)),
                 Fila("Renta exenta", fm(o.exenta)),
+                Fila("Límite conjunto (40% o 1.340 UVT)", fm(o.limite)),
+                Fila("Dependientes (fuera del límite)", fm(o.dependientesValor)),
                 Fila("Beneficios aplicados", fm(o.beneficios), negrita = true),
-                Fila("Límite", fm(o.limite)),
             ),
         )
     }
 }
 
 @Composable
-fun RetencionesScreen(onBack: () -> Unit) {
-    val mostrar = LocalShowMessage.current
+fun RetencionesScreen(vm: RentaViewModel, onBack: () -> Unit, onGuardar: () -> Unit) {
+    val e = vm.declaracion
+    val o = vm.resultadoDeclaracion
+    var intento by remember { mutableStateOf(false) }
+
+    val tieneNegativos = e.retenciones < 0
+
     ScreenScaffold(
         titulo = "Retenciones y anticipos",
-        sub = "Bloque 5 de 5 · cifras de ejemplo",
+        sub = "Bloque 5 de 5 · año gravable 2025",
         onBack = onBack,
         footer = {
-            BotonPrimario("Agregar retención", Icons.Outlined.Add) {
-                mostrar("Formulario de retención (sin mockup)")
+            if (intento && tieneNegativos) {
+                Aviso(AvisoTipo.Alerta, texto = "No se permiten montos negativos en las retenciones.")
+                Spacer(Modifier.height(4.dp))
+            }
+            BotonPrimario("Guardar", Icons.Outlined.Check) {
+                intento = true
+                if (!tieneNegativos) {
+                    onGuardar()
+                }
             }
         },
     ) {
+        Aviso(
+            AvisoTipo.Info,
+            texto = "Las retenciones aparecen en el certificado de ingresos y retenciones (formulario 220) que te entrega tu empleador."
+        )
+
+        if (e.retenciones.toDouble() > o.impuesto) {
+            Aviso(
+                AvisoTipo.Info,
+                texto = "Tus retenciones superan el impuesto a cargo, por lo que tienes un saldo a favor."
+            )
+        }
+
+        CampoEntrada(
+            campo = Campo.Retenciones,
+            valor = e.retenciones,
+            onCambio = { t ->
+                val num = t.filter { it.isDigit() }.take(12).toLongOrNull() ?: 0L
+                vm.cambiarDeclaracion(Campo.Retenciones, num)
+            }
+        )
+
         FilasCard(
-            encabezado = "RETENCIÓN EN LA FUENTE POR PAGADOR",
+            encabezado = "RESUMEN DE LIQUIDACIÓN",
             filas = listOf(
-                Fila("[Pagador]", "$ 4.200.000", "Salario", Icons.Outlined.Work),
-                Fila("[Cliente]", "$ 2.400.000", "Honorarios", Icons.Outlined.Person),
-                Fila("Anticipo del año anterior", "$ 0"),
-                Fila("Saldo a favor anterior", "$ 0"),
-                Fila("Total", "$ 6.600.000", negrita = true),
+                Fila("Impuesto a cargo", fm(o.impuesto)),
+                Fila("Retenciones", fm(e.retenciones.toDouble())),
+                Fila(if (o.saldo < 0) "Saldo a favor" else "Saldo a pagar", fm(abs(o.saldo)), negrita = true),
             ),
         )
-        Aviso(AvisoTipo.Alerta, texto = "Falta el certificado de ingresos y retenciones del empleador.")
     }
 }
 
@@ -325,7 +383,7 @@ private fun DatosPreview() = MiRentaTheme { DatosScreen({}, {}) }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun PatrimonioPreview() = MiRentaTheme { PatrimonioScreen {} }
+private fun PatrimonioPreview() = MiRentaTheme { PatrimonioScreen(RentaViewModel(), {}, {}) }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
@@ -333,7 +391,7 @@ private fun DeduccionesPreview() = MiRentaTheme { DeduccionesScreen(RentaViewMod
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun RetencionesPreview() = MiRentaTheme { RetencionesScreen {} }
+private fun RetencionesPreview() = MiRentaTheme { RetencionesScreen(RentaViewModel(), {}, {}) }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable

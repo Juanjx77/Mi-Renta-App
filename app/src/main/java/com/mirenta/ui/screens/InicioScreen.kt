@@ -88,6 +88,9 @@ fun InicioScreen(
     val pillIngresos = if (v.salario + v.honorarios + v.arriendos + v.intereses > 0) "Completo" to PillTipo.Ok else "Pendiente" to PillTipo.Aviso
     val tieneDeducciones = v.aportes > 0 || v.vivienda > 0 || v.dependientes > 0 || v.prepagada > 0 || v.afc > 0
     val pillDeducciones = if (tieneDeducciones) "Completo" to PillTipo.Ok else "Sin beneficios" to PillTipo.Neutro
+    val tienePatrimonio = v.patrimonio > 0 || v.deudas > 0 || v.consumos > 0
+    val pillPatrimonio = if (tienePatrimonio) "Completo" to PillTipo.Ok else "Sin registrar" to PillTipo.Neutro
+    val pillRetenciones = if (v.retenciones > 0) "Completo" to PillTipo.Ok else "Sin retenciones" to PillTipo.Neutro
 
     var mostrarDialogoLogout by remember { mutableStateOf(false) }
 
@@ -144,7 +147,7 @@ fun InicioScreen(
             filas = listOf(
                 Fila("Ingresos", icono = Icons.Outlined.Paid, pill = pillIngresos, destino = Rutas.Ingresos),
                 Fila("Datos personales", icono = Icons.Outlined.Person, pill = pillDatos, destino = Rutas.Datos),
-                Fila("Patrimonio", icono = Icons.Outlined.AccountBalance, pill = "Completo" to PillTipo.Ok, destino = Rutas.Patrimonio),
+                Fila("Patrimonio", icono = Icons.Outlined.AccountBalance, pill = pillPatrimonio, destino = Rutas.Patrimonio),
                 Fila(
                     "Información exógena",
                     icono = Icons.Outlined.FactCheck,
@@ -154,7 +157,7 @@ fun InicioScreen(
                 Fila("Simulador", icono = Icons.Outlined.Percent, pill = "Pruébalo" to PillTipo.Neutro, destino = Rutas.Simulador),
                 Fila("Soportes", icono = Icons.Outlined.AttachFile, pill = "1 faltante" to PillTipo.Aviso, destino = Rutas.Soportes),
                 Fila("Deducciones", icono = Icons.Outlined.Percent, pill = pillDeducciones, destino = Rutas.Deducciones),
-                Fila("Retenciones", icono = Icons.Outlined.Receipt, pill = "Sin iniciar" to PillTipo.Neutro, destino = Rutas.Retenciones),
+                Fila("Retenciones", icono = Icons.Outlined.Receipt, pill = pillRetenciones, destino = Rutas.Retenciones),
             ),
         )
         // Siguiente paso

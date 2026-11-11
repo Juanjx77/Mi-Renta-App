@@ -114,5 +114,24 @@ class TaxCalculatorTest {
         assertEquals(1037.32, r.uvt, 0.01)
         assertEquals(0.0, r.impuesto, 1.0)
         assertEquals(0.0, r.saldo, 1.0)
+        assertEquals(true, r.topeAlcanzado)
+    }
+
+    @Test
+    fun testCasoDeduccionesTope() {
+        val entradas = Entradas(
+            salario = 120_000_000L,
+            aportes = 10_000_000L,
+            vivienda = 10_000_000L,
+            dependientes = 4L
+        )
+        val r = TaxCalculator.calcular(entradas)
+
+        assertEquals(24_342_112.0, r.deducciones, 1.0)
+        assertEquals(21_414_472.0, r.exenta, 1.0)
+        assertEquals(44_000_000.0, r.limite, 1.0)
+        assertEquals(45_756_584.0, r.beneficios, 1.0)
+        assertEquals(64_243_416.0, r.rentaLiquidaTrabajo, 1.0)
+        assertEquals(false, r.topeAlcanzado)
     }
 }

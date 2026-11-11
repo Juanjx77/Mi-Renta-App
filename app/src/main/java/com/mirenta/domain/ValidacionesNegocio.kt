@@ -71,17 +71,9 @@ object ValidacionesNegocio {
         val lab = (v.salario + v.honorarios).toDouble()
         val inc = minOf(v.aportes.toDouble(), lab)
         val base = lab - inc
-        val viv = minOf(v.vivienda.toDouble(), Reglas2025.topeInteresesViviendaUvt.valor * Reglas2025.uvt.valor)
-        val pre = minOf(v.prepagada.toDouble(), Reglas2025.topeSaludPrepagadaUvt.valor * Reglas2025.uvt.valor)
-        val dep = minOf(v.dependientes.toDouble(), Reglas2025.maxDependientes.valor) * Reglas2025.deduccionDependienteUvt.valor * Reglas2025.uvt.valor
-        val afc = minOf(v.afc.toDouble(), Reglas2025.porcentajeMaxAfc.valor * lab, Reglas2025.topeAfcUvt.valor * Reglas2025.uvt.valor)
-        val ded = viv + pre + dep + afc
-        val dedSinDep = viv + pre + afc
-        val exe = minOf(Reglas2025.porcentajeRentaExentaLaboral.valor * maxOf(base - ded, 0.0), Reglas2025.topeRentaExentaLaboralUvt.valor * Reglas2025.uvt.valor)
-        val lim = minOf(Reglas2025.porcentajeLimiteConjunto.valor * base, Reglas2025.topeLimiteConjuntoUvt.valor * Reglas2025.uvt.valor)
-        val dedComparacion = dedSinDep + exe
+        val rCalc = TaxCalculator.calcular(v)
 
-        if (dedComparacion > lim && base > 0) {
+        if (rCalc.topeAlcanzado && base > 0) {
             hallazgos.add(
                 Hallazgo(
                     Severidad.ADVERTENCIA,

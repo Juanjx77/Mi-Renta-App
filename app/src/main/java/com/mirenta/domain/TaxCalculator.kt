@@ -22,6 +22,8 @@ data class Resultado(
     val tarifaMarginal: Double,
     val tarifaEfectiva: Double,
     val patrimonioLiquido: Double,
+    val topeAlcanzado: Boolean,
+    val dependientesValor: Double,
     val motivos: List<String>,
 )
 
@@ -48,6 +50,8 @@ object TaxCalculator {
 
         val exe = min(Reglas2025.porcentajeRentaExentaLaboral.valor * max(base - ded, 0.0), Reglas2025.topeRentaExentaLaboralUvt.valor * UVT)
         val lim = min(Reglas2025.porcentajeLimiteConjunto.valor * base, Reglas2025.topeLimiteConjuntoUvt.valor * UVT)
+        val dedComparacion = dedSinDep + exe
+        val topeAlcanzado = dedComparacion >= lim && base > 0
         val ben = min(dedSinDep + exe, lim) + dep
         val rl = max(base - ben, 0.0)
         val rg = rl + cap
@@ -77,6 +81,8 @@ object TaxCalculator {
             tarifaMarginal = marginal(u),
             tarifaEfectiva = if (lab + cap > 0) imp / (lab + cap) else 0.0,
             patrimonioLiquido = (v.patrimonio - v.deudas).toDouble(),
+            topeAlcanzado = topeAlcanzado,
+            dependientesValor = dep,
             motivos = motivos,
         )
     }
