@@ -26,6 +26,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mirenta.navigation.Rutas
 import com.mirenta.ui.AuthViewModel
+import com.mirenta.ui.PerfilViewModel
 import com.mirenta.ui.RentaViewModel
 import com.mirenta.ui.components.BotonContorno
 import com.mirenta.ui.components.Fila
@@ -50,14 +52,38 @@ import com.mirenta.ui.components.PillTipo
 import com.mirenta.ui.components.ScreenScaffold
 import com.mirenta.ui.theme.MiRentaTheme
 import com.mirenta.ui.theme.RC
+import com.mirenta.util.fm
+import kotlin.math.abs
 
 @Composable
 fun InicioScreen(
     vm: RentaViewModel,
     authViewModel: AuthViewModel = viewModel(),
+    perfilViewModel: PerfilViewModel = viewModel(),
     onNav: (String) -> Unit,
     onLogout: () -> Unit,
 ) {
+    LaunchedEffect(Unit) {
+        perfilViewModel.cargar()
+    }
+
+    val perfil = perfilViewModel.perfil
+    val primerNombre = perfil.nombre.trim().split(Regex("\\s+")).firstOrNull()?.takeIf { it.isNotBlank() }
+    val tituloHola = if (primerNombre != null) "Hola, $primerNombre" else "Hola"
+
+    val v = vm.entradas
+    val o = vm.resultado
+    val vacio = !vm.calculado && v == com.mirenta.domain.Entradas()
+
+    val saldoStr = if (vacio) "$ 0" else fm(abs(o.saldo))
+    val ingresosStr = if (vacio) "$ 0" else fm(o.laborales + o.capital)
+    val rentaGravStr = if (vacio) "$ 0" else fm(o.rentaGravable)
+    val impuestoStr = if (vacio) "$ 0" else fm(o.impuesto)
+    val tituloSaldo = if (o.saldo < 0) "SALDO A FAVOR" else "SALDO ESTIMADO A PAGAR"
+
+    val perfilCompleto = perfil.nombre.isNotBlank() && perfil.numeroDocumento.isNotBlank()
+    val pillDatos = if (perfilCompleto) "Completo" to PillTipo.Ok else "Pendiente" to PillTipo.Aviso
+
     var mostrarDialogoLogout by remember { mutableStateOf(false) }
 
     if (mostrarDialogoLogout) {
@@ -85,7 +111,7 @@ fun InicioScreen(
         )
     }
 
-    ScreenScaffold(titulo = "Hola, [Nombre]", pre = "Año gravable 2025") {
+    ScreenScaffold(titulo = tituloHola, pre = "Año gravable 2025") {
         // Resumen
         Column(
             Modifier
@@ -94,24 +120,24 @@ fun InicioScreen(
                 .background(Color.White, RoundedCornerShape(22.dp))
                 .padding(16.dp),
         ) {
-            Text("SALDO ESTIMADO A PAGAR", color = RC.Muted, fontSize = 12.sp)
-            Text("$ 1.958.000", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Text(tituloSaldo, color = RC.Muted, fontSize = 12.sp)
+            Text(saldoStr, fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().height(10.dp).clip(CircleShape).background(RC.Divider)) {
-                Box(Modifier.fillMaxWidth(0.64f).fillMaxHeight().clip(CircleShape).background(RC.Mid))
+                Box(Modifier.fillMaxWidth(if (vacio) 0.0f else 0.64f).fillMaxHeight().clip(CircleShape).background(RC.Mid))
             }
             Spacer(Modifier.height(6.dp))
-            Text("64% completo · cifras de ejemplo", fontSize = 14.sp)
+            Text("Progreso referencial (ejemplo) · 64% completo", fontSize = 14.sp)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Dato("INGRESOS", "$ 132,6 M", Modifier.weight(1f))
-            Dato("RENTA GRAV.", "$ 94,6 M", Modifier.weight(1f))
-            Dato("IMPUESTO", "$ 8,6 M", Modifier.weight(1f))
+            Dato("INGRESOS", ingresosStr, Modifier.weight(1f))
+            Dato("RENTA GRAV.", rentaGravStr, Modifier.weight(1f))
+            Dato("IMPUESTO", impuestoStr, Modifier.weight(1f))
         }
         FilasCard(
             onNav = onNav,
             filas = listOf(
-                Fila("Datos personales", icono = Icons.Outlined.Person, pill = "Completo" to PillTipo.Ok, destino = Rutas.Datos),
+                Fila("Datos personales", icono = Icons.Outlined.Person, pill = pillDatos, destino = Rutas.Datos),
                 Fila("Patrimonio", icono = Icons.Outlined.AccountBalance, pill = "Completo" to PillTipo.Ok, destino = Rutas.Patrimonio),
                 Fila(
                     "Información exógena",
