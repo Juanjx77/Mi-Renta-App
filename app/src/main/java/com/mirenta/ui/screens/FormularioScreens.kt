@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mirenta.domain.Reglas2025
+import com.mirenta.domain.SeccionesDeclaracion
 import com.mirenta.domain.Severidad
 import com.mirenta.domain.ValidacionesNegocio
 import com.mirenta.navigation.Rutas
@@ -44,13 +46,23 @@ import com.mirenta.ui.components.Tarjeta
 import com.mirenta.ui.theme.MiRentaTheme
 import com.mirenta.ui.theme.RC
 import com.mirenta.util.fm
+import java.util.Locale
 import kotlin.math.abs
 
 @Composable
-fun FormularioScreen(onNav: (String) -> Unit) {
+fun FormularioScreen(vm: RentaViewModel, onNav: (String) -> Unit) {
+    val v = vm.declaracion
+    val o = vm.resultadoDeclaracion
+    val s = v.seccionesGuardadas
+
+    val tieneIngresos = s.contains(SeccionesDeclaracion.Ingresos)
+    val tieneDeducciones = s.contains(SeccionesDeclaracion.Deducciones)
+    val tieneRetenciones = s.contains(SeccionesDeclaracion.Retenciones)
+    val tienePatrimonio = s.contains(SeccionesDeclaracion.Patrimonio)
+
     ScreenScaffold(
         titulo = "Formulario 210",
-        sub = "AG 2025 · cifras de ejemplo",
+        sub = "AG 2025",
         footer = {
             BotonPrimario("Verificar y exportar", Icons.Outlined.FactCheck) { onNav(Rutas.Verificar) }
         },
@@ -60,50 +72,63 @@ fun FormularioScreen(onNav: (String) -> Unit) {
             encabezado = "CÉDULA GENERAL · RENTAS DE TRABAJO",
             onNav = onNav,
             filas = listOf(
-                Fila("Ingresos brutos", "$ 120.000.000"),
-                Fila("(−) Ingresos no constitutivos de renta", "$ 7.680.000"),
-                Fila("(−) Rentas exentas y deducciones", "$ 30.330.000"),
-                Fila("Renta líquida de trabajo ›", "$ 81.990.000", negrita = true, destino = Rutas.Detalle),
+                Fila("Ingresos brutos", if (tieneIngresos) fm(o.laborales) else "Sin datos"),
+                Fila("(−) Ingresos no constitutivos de renta", if (tieneIngresos) fm(o.noConstitutivos) else "Sin datos"),
+                Fila("(−) Rentas exentas y deducciones", if (tieneDeducciones) fm(o.beneficios) else "Sin datos"),
+                Fila("Renta líquida de trabajo ›", if (tieneIngresos || tieneDeducciones) fm(o.rentaLiquidaTrabajo) else "Sin datos", negrita = true, destino = Rutas.Detalle),
             ),
         )
         FilasCard(
             encabezado = "CÉDULA GENERAL · RENTAS DE CAPITAL",
             filas = listOf(
-                Fila("Ingresos brutos", "$ 12.600.000"),
-                Fila("(−) Costos y deducciones", "$ 0"),
-                Fila("Renta líquida de capital", "$ 12.600.000", negrita = true),
+                Fila("Ingresos brutos", if (tieneIngresos) fm(o.capital) else "Sin datos"),
+                Fila("(−) Costos y deducciones", "No calculado"),
+                Fila("Renta líquida de capital", if (tieneIngresos) fm(o.capital) else "Sin datos", negrita = true),
             ),
         )
+        val uvtStr = String.format(Locale("es", "CO"), "%.2f", o.uvt).replace('.', ',') + " UVT"
         FilasCard(
             encabezado = "LIQUIDACIÓN DEL IMPUESTO",
             filas = listOf(
-                Fila("Renta líquida gravable", "$ 94.590.000", "1.899,44 UVT"),
-                Fila("Impuesto a cargo", "$ 8.558.000"),
-                Fila("(−) Retenciones", "$ 6.600.000"),
-                Fila("(−) Anticipo del año anterior", "$ 0"),
-                Fila("Saldo a pagar", "$ 1.958.000", negrita = true),
+                Fila("Renta líquida gravable", if (tieneIngresos) fm(o.rentaGravable) else "Sin datos", if (tieneIngresos) uvtStr else "Sin datos"),
+                Fila("Impuesto a cargo", if (tieneIngresos) fm(o.impuesto) else "Sin datos"),
+                Fila("(−) Retenciones", if (tieneRetenciones) fm(v.retenciones.toDouble()) else "Sin datos"),
+                Fila("(−) Anticipo del año anterior", "No calculado"),
+                Fila(if (o.saldo < 0) "Saldo a favor" else "Saldo a pagar", if (tieneIngresos) fm(abs(o.saldo)) else "Sin datos", negrita = true),
             ),
         )
         FilasCard(
             encabezado = "PATRIMONIO AL 31 DE DICIEMBRE",
             onNav = onNav,
-            filas = listOf(Fila("Patrimonio líquido", "$ 133.000.000", destino = Rutas.Patrimonio)),
+            filas = listOf(Fila("Patrimonio líquido", if (tienePatrimonio) fm(o.patrimonioLiquido) else "Sin datos", destino = Rutas.Patrimonio)),
         )
         Text("Toca cualquier valor para ver su fórmula y soportes.", fontSize = 12.sp, color = RC.Label)
     }
 }
 
 @Composable
-fun DetalleScreen(onBack: () -> Unit) {
+fun DetalleScreen(vm: RentaViewModel, onBack: () -> Unit) {
+    val v = vm.declaracion
+    val o = vm.resultadoDeclaracion
+    val s = v.seccionesGuardadas
+
+    val tieneIngresos = s.contains(SeccionesDeclaracion.Ingresos)
+    val tieneDeducciones = s.contains(SeccionesDeclaracion.Deducciones)
+
+    val valorRentaLiquida = if (tieneIngresos || tieneDeducciones) fm(o.rentaLiquidaTrabajo) else "Sin datos"
+    val formulaTexto = "\nIngresos brutos − ingresos no constitutivos de renta − rentas exentas y deducciones\n${if (tieneIngresos) fm(o.laborales) else "0"} − ${if (tieneIngresos) fm(o.noConstitutivos) else "0"} − ${if (tieneDeducciones) fm(o.beneficios) else "0"}"
+
+    val porcentajeLimite = (Reglas2025.porcentajeLimiteConjunto.valor * 100).toInt()
+
     ScreenScaffold(
         titulo = "Renta líquida · Trabajo",
-        sub = "Formulario 210 · cifras de ejemplo",
+        sub = "Formulario 210",
         onBack = onBack,
     ) {
         Tarjeta {
             Etiqueta("VALOR CALCULADO")
             Text(
-                "$ 81.990.000",
+                valorRentaLiquida,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
@@ -112,21 +137,21 @@ fun DetalleScreen(onBack: () -> Unit) {
         Aviso(
             AvisoTipo.Info,
             negrita = "Fórmula",
-            texto = "\nIngresos brutos − ingresos no constitutivos de renta − rentas exentas y deducciones\n120.000.000 − 7.680.000 − 30.330.000",
+            texto = formulaTexto,
         )
         FilasCard(
             encabezado = "DATOS DE ORIGEN",
             filas = listOf(
-                Fila("Ingresos brutos", "$ 120.000.000", "Salario + honorarios"),
-                Fila("No constitutivos", "$ 7.680.000", "Aportes a salud y pensión"),
-                Fila("Exentas y deducciones", "$ 30.330.000", "Dentro del límite del 40%"),
+                Fila("Ingresos brutos", if (tieneIngresos) fm(o.laborales) else "Sin datos", "Salario + honorarios"),
+                Fila("No constitutivos", if (tieneIngresos) fm(o.noConstitutivos) else "Sin datos", "Aportes a salud y pensión"),
+                Fila("Exentas y deducciones", if (tieneDeducciones) fm(o.beneficios) else "Sin datos", "Dentro del límite del $porcentajeLimite %"),
             ),
         )
         FilasCard(
             encabezado = "PARÁMETROS USADOS",
             filas = listOf(
-                Fila("UVT año gravable 2025", "$ 49.799"),
-                Fila("Límite conjunto", "1.340 UVT"),
+                Fila("UVT año gravable 2025", fm(Reglas2025.uvt.valor)),
+                Fila("Límite conjunto", "${Reglas2025.topeLimiteConjuntoUvt.valor.toInt()} UVT"),
             ),
         )
         Aviso(
@@ -213,7 +238,7 @@ fun VerificarScreen(vm: RentaViewModel, onBack: () -> Unit, onNav: (String) -> U
         }
 
         FilasCard(
-            encabezado = "RESUMEN · CIFRAS DE EJEMPLO",
+            encabezado = "RESUMEN",
             filas = listOf(
                 Fila("Renta líquida gravable", fm(o.rentaGravable)),
                 Fila("Impuesto a cargo", fm(o.impuesto)),
@@ -232,11 +257,11 @@ fun VerificarScreen(vm: RentaViewModel, onBack: () -> Unit, onNav: (String) -> U
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 1100)
 @Composable
-private fun FormularioPreview() = MiRentaTheme { FormularioScreen {} }
+private fun FormularioPreview() = MiRentaTheme { FormularioScreen(RentaViewModel().apply { cargarEjemplo() }) {} }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun DetallePreview() = MiRentaTheme { DetalleScreen {} }
+private fun DetallePreview() = MiRentaTheme { DetalleScreen(RentaViewModel().apply { cargarEjemplo() }) {} }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable

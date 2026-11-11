@@ -176,7 +176,7 @@ fun MiRentaApp() {
                     }
                     composable(Rutas.Exogena) { ExogenaScreen(vm, onNav = { ir(it) }) }
                     composable(Rutas.Simulador) { SimuladorScreen(vm, onNav = { ir(it) }) }
-                    composable(Rutas.Formulario) { FormularioScreen(onNav = { ir(it) }) }
+                    composable(Rutas.Formulario) { FormularioScreen(vm, onNav = { ir(it) }) }
                     composable(Rutas.Aprende) { AprendeScreen() }
                     composable(Rutas.Patrimonio) {
                         PatrimonioScreen(vm, onBack = { irAInicio() }, onGuardar = { irAInicio() })
@@ -188,7 +188,7 @@ fun MiRentaApp() {
                         RetencionesScreen(vm, onBack = { irAInicio() }, onGuardar = { irAInicio() })
                     }
                     composable(Rutas.Soportes) { SoportesScreen(onBack = { volver() }) }
-                    composable(Rutas.Detalle) { DetalleScreen(onBack = { volver() }) }
+                    composable(Rutas.Detalle) { DetalleScreen(vm, onBack = { volver() }) }
                     composable(Rutas.Verificar) {
                         VerificarScreen(vm, onBack = { volver() }, onNav = { ir(it) })
                     }
