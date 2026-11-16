@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: mirenta-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/mirenta}
+    username: ${DATABASE_USER:mirenta}
+    password: ${DATABASE_PASSWORD:mirenta}
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 10000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+mirenta:
+  auth:
+    # firebase: verifica el ID token de Firebase. demo: el token es el uid (solo para pruebas locales).
+    modo: ${AUTH_MODO:demo}
+    firebase-project-id: ${FIREBASE_PROJECT_ID:}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
