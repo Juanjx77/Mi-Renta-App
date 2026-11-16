@@ -1,5 +1,8 @@
 package com.mirenta.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuthException
@@ -14,6 +17,17 @@ import kotlinx.coroutines.launch
 class AuthViewModel(
     private val authRepository: AuthRepository = AuthRepository()
 ) : ViewModel() {
+
+    var loginCorreo by mutableStateOf("")
+    var loginClave by mutableStateOf("")
+    var loginIntentado by mutableStateOf(false)
+
+    var crearNombre by mutableStateOf("")
+    var crearCorreo by mutableStateOf("")
+    var crearClave by mutableStateOf("")
+    var crearConfirmar by mutableStateOf("")
+    var crearTerminosAceptados by mutableStateOf(false)
+    var crearIntentado by mutableStateOf(false)
 
     private val _cargando = MutableStateFlow(false)
     val cargando: StateFlow<Boolean> = _cargando.asStateFlow()
@@ -32,9 +46,9 @@ class AuthViewModel(
         _mensajeInfo.value = null
     }
 
-    fun iniciarSesion(correo: String, clave: String, onExito: () -> Unit) {
-        val errCorreo = Validadores.correo(correo)
-        val errClave = Validadores.claveLogin(clave)
+    fun iniciarSesion(onExito: () -> Unit) {
+        val errCorreo = Validadores.correo(loginCorreo)
+        val errClave = Validadores.claveLogin(loginClave)
         if (errCorreo != null || errClave != null) {
             _errorGeneral.value = errCorreo ?: errClave
             return
@@ -45,7 +59,7 @@ class AuthViewModel(
             _errorGeneral.value = null
             _mensajeInfo.value = null
             try {
-                authRepository.iniciarSesion(correo.trim(), clave)
+                authRepository.iniciarSesion(loginCorreo.trim(), loginClave)
                 _sesionIniciada.value = true
                 onExito()
             } catch (e: CancellationException) {
@@ -58,19 +72,12 @@ class AuthViewModel(
         }
     }
 
-    fun registrar(
-        nombre: String,
-        correo: String,
-        clave: String,
-        confirmar: String,
-        terminosAceptados: Boolean,
-        onExito: () -> Unit
-    ) {
-        val errNombre = Validadores.nombre(nombre)
-        val errCorreo = Validadores.correo(correo)
-        val errClave = Validadores.claveNueva(clave)
-        val errConf = Validadores.confirmacion(clave, confirmar)
-        val errTerm = Validadores.terminos(terminosAceptados)
+    fun registrar(onExito: () -> Unit) {
+        val errNombre = Validadores.nombre(crearNombre)
+        val errCorreo = Validadores.correo(crearCorreo)
+        val errClave = Validadores.claveNueva(crearClave)
+        val errConf = Validadores.confirmacion(crearClave, crearConfirmar)
+        val errTerm = Validadores.terminos(crearTerminosAceptados)
 
         if (errNombre != null || errCorreo != null || errClave != null || errConf != null || errTerm != null) {
             _errorGeneral.value = errNombre ?: errCorreo ?: errClave ?: errConf ?: errTerm
@@ -82,7 +89,7 @@ class AuthViewModel(
             _errorGeneral.value = null
             _mensajeInfo.value = null
             try {
-                authRepository.registrar(nombre.trim(), correo.trim(), clave)
+                authRepository.registrar(crearNombre.trim(), crearCorreo.trim(), crearClave)
                 _sesionIniciada.value = true
                 onExito()
             } catch (e: CancellationException) {
@@ -95,8 +102,8 @@ class AuthViewModel(
         }
     }
 
-    fun recuperarClave(correo: String) {
-        val errCorreo = Validadores.correo(correo)
+    fun recuperarClave() {
+        val errCorreo = Validadores.correo(loginCorreo)
         if (errCorreo != null) {
             _errorGeneral.value = errCorreo
             return
@@ -107,7 +114,7 @@ class AuthViewModel(
             _errorGeneral.value = null
             _mensajeInfo.value = null
             try {
-                authRepository.recuperarClave(correo.trim())
+                authRepository.recuperarClave(loginCorreo.trim())
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

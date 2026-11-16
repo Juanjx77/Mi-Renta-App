@@ -26,9 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,12 +66,8 @@ fun LoginScreen(
     val errorGeneral by authViewModel.errorGeneral.collectAsState()
     val mensajeInfo by authViewModel.mensajeInfo.collectAsState()
 
-    var correo by remember { mutableStateOf("") }
-    var clave by remember { mutableStateOf("") }
-    var intentado by remember { mutableStateOf(false) }
-
-    val errorCorreo = if (intentado) Validadores.correo(correo) else null
-    val errorClave = if (intentado) Validadores.claveLogin(clave) else null
+    val errorCorreo = if (authViewModel.loginIntentado) Validadores.correo(authViewModel.loginCorreo) else null
+    val errorClave = if (authViewModel.loginIntentado) Validadores.claveLogin(authViewModel.loginClave) else null
 
     LaunchedEffect(mensajeInfo) {
         mensajeInfo?.let { mostrar(it) }
@@ -124,7 +117,7 @@ fun LoginScreen(
         }
 
         CampoTexto(
-            "Correo electrónico", "nombre@correo.com", correo, { correo = it },
+            "Correo electrónico", "nombre@correo.com", authViewModel.loginCorreo, { authViewModel.loginCorreo = it },
             colorEtiqueta = Color.White, teclado = KeyboardType.Email,
         )
         if (errorCorreo != null) {
@@ -132,7 +125,7 @@ fun LoginScreen(
         }
 
         CampoTexto(
-            "Contraseña", "Contraseña", clave, { clave = it },
+            "Contraseña", "Contraseña", authViewModel.loginClave, { authViewModel.loginClave = it },
             colorEtiqueta = Color.White, teclado = KeyboardType.Password,
             transformacion = PasswordVisualTransformation(),
         )
@@ -148,9 +141,9 @@ fun LoginScreen(
             textDecoration = TextDecoration.Underline,
             modifier = Modifier
                 .clickable {
-                    intentado = true
-                    if (Validadores.correo(correo) == null) {
-                        authViewModel.recuperarClave(correo)
+                    authViewModel.loginIntentado = true
+                    if (Validadores.correo(authViewModel.loginCorreo) == null) {
+                        authViewModel.recuperarClave()
                     }
                 }
                 .padding(vertical = 10.dp),
@@ -160,11 +153,11 @@ fun LoginScreen(
             if (cargando) "Iniciando sesión..." else "Ingresar",
             Icons.AutoMirrored.Outlined.ArrowForward,
             onClick = {
-                intentado = true
-                val errC = Validadores.correo(correo)
-                val errK = Validadores.claveLogin(clave)
+                authViewModel.loginIntentado = true
+                val errC = Validadores.correo(authViewModel.loginCorreo)
+                val errK = Validadores.claveLogin(authViewModel.loginClave)
                 if (errC == null && errK == null) {
-                    authViewModel.iniciarSesion(correo, clave, onIngresar)
+                    authViewModel.iniciarSesion(onIngresar)
                 }
             },
         )
@@ -189,18 +182,11 @@ fun CrearScreen(
     val cargando by authViewModel.cargando.collectAsState()
     val errorGeneral by authViewModel.errorGeneral.collectAsState()
 
-    var nombre by remember { mutableStateOf("") }
-    var correo by remember { mutableStateOf("") }
-    var clave by remember { mutableStateOf("") }
-    var confirmar by remember { mutableStateOf("") }
-    var terminosAceptados by remember { mutableStateOf(false) }
-    var intentado by remember { mutableStateOf(false) }
-
-    val errorNombre = if (intentado) Validadores.nombre(nombre) else null
-    val errorCorreo = if (intentado) Validadores.correo(correo) else null
-    val errorClave = if (intentado) Validadores.claveNueva(clave) else null
-    val errorConfirmar = if (intentado) Validadores.confirmacion(clave, confirmar) else null
-    val errorTerminos = if (intentado) Validadores.terminos(terminosAceptados) else null
+    val errorNombre = if (authViewModel.crearIntentado) Validadores.nombre(authViewModel.crearNombre) else null
+    val errorCorreo = if (authViewModel.crearIntentado) Validadores.correo(authViewModel.crearCorreo) else null
+    val errorClave = if (authViewModel.crearIntentado) Validadores.claveNueva(authViewModel.crearClave) else null
+    val errorConfirmar = if (authViewModel.crearIntentado) Validadores.confirmacion(authViewModel.crearClave, authViewModel.crearConfirmar) else null
+    val errorTerminos = if (authViewModel.crearIntentado) Validadores.terminos(authViewModel.crearTerminosAceptados) else null
 
     ScreenScaffold(
         titulo = "Crear cuenta",
@@ -211,14 +197,14 @@ fun CrearScreen(
                 Spacer(Modifier.height(4.dp))
             }
             BotonPrimario(if (cargando) "Creando cuenta..." else "Crear cuenta", onClick = {
-                intentado = true
-                val errN = Validadores.nombre(nombre)
-                val errC = Validadores.correo(correo)
-                val errK = Validadores.claveNueva(clave)
-                val errCf = Validadores.confirmacion(clave, confirmar)
-                val errT = Validadores.terminos(terminosAceptados)
+                authViewModel.crearIntentado = true
+                val errN = Validadores.nombre(authViewModel.crearNombre)
+                val errC = Validadores.correo(authViewModel.crearCorreo)
+                val errK = Validadores.claveNueva(authViewModel.crearClave)
+                val errCf = Validadores.confirmacion(authViewModel.crearClave, authViewModel.crearConfirmar)
+                val errT = Validadores.terminos(authViewModel.crearTerminosAceptados)
                 if (errN == null && errC == null && errK == null && errCf == null && errT == null) {
-                    authViewModel.registrar(nombre, correo, clave, confirmar, terminosAceptados, onCrear)
+                    authViewModel.registrar(onCrear)
                 }
             })
             TextButton(onClick = onYaTengoCuenta, modifier = Modifier.fillMaxWidth()) {
@@ -226,33 +212,33 @@ fun CrearScreen(
             }
         },
     ) {
-        CampoTexto("Nombre completo", "[Nombre y apellidos]", nombre, { nombre = it })
+        CampoTexto("Nombre completo", "[Nombre y apellidos]", authViewModel.crearNombre, { authViewModel.crearNombre = it })
         if (errorNombre != null) {
             Text(errorNombre, color = Color(0xFFEF4444), fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
         }
 
-        CampoTexto("Correo electrónico", "nombre@correo.com", correo, { correo = it }, teclado = KeyboardType.Email)
+        CampoTexto("Correo electrónico", "nombre@correo.com", authViewModel.crearCorreo, { authViewModel.crearCorreo = it }, teclado = KeyboardType.Email)
         if (errorCorreo != null) {
             Text(errorCorreo, color = Color(0xFFEF4444), fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
         }
 
-        CampoTexto("Contraseña", "Mínimo 8 caracteres", clave, { clave = it }, teclado = KeyboardType.Password, transformacion = PasswordVisualTransformation())
+        CampoTexto("Contraseña", "Mínimo 8 caracteres", authViewModel.crearClave, { authViewModel.crearClave = it }, teclado = KeyboardType.Password, transformacion = PasswordVisualTransformation())
         if (errorClave != null) {
             Text(errorClave, color = Color(0xFFEF4444), fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
         }
 
-        CampoTexto("Confirmar contraseña", "Repite la contraseña", confirmar, { confirmar = it }, teclado = KeyboardType.Password, transformacion = PasswordVisualTransformation())
+        CampoTexto("Confirmar contraseña", "Repite la contraseña", authViewModel.crearConfirmar, { authViewModel.crearConfirmar = it }, teclado = KeyboardType.Password, transformacion = PasswordVisualTransformation())
         if (errorConfirmar != null) {
             Text(errorConfirmar, color = Color(0xFFEF4444), fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
         }
 
         Row(
-            Modifier.fillMaxWidth().clickable { terminosAceptados = !terminosAceptados }.padding(vertical = 2.dp),
+            Modifier.fillMaxWidth().clickable { authViewModel.crearTerminosAceptados = !authViewModel.crearTerminosAceptados }.padding(vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
-                checked = terminosAceptados,
-                onCheckedChange = { terminosAceptados = it },
+                checked = authViewModel.crearTerminosAceptados,
+                onCheckedChange = { authViewModel.crearTerminosAceptados = it },
                 colors = CheckboxDefaults.colors(checkedColor = RC.Green),
             )
             Text("Acepto el tratamiento de mis datos personales y tributarios.", fontSize = 14.sp)
