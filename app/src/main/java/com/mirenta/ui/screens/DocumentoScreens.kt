@@ -33,6 +33,7 @@ import com.mirenta.domain.ValidacionesNegocio
 import com.mirenta.navigation.Rutas
 import com.mirenta.ui.PerfilViewModel
 import com.mirenta.ui.RentaViewModel
+import com.mirenta.ui.rentaViewModelDePrueba
 import com.mirenta.ui.components.Aviso
 import com.mirenta.ui.components.AvisoTipo
 import com.mirenta.ui.components.BotonContorno
@@ -162,11 +163,11 @@ fun DocumentoCard(vm: RentaViewModel, perfil: PerfilDatos?) {
 @Preview(showBackground = true, widthDp = 390, heightDp = 1400)
 @Composable
 private fun VistaPreview() = MiRentaTheme {
-    VistaScreen(RentaViewModel().apply { cargarExogena("exogena_2025_ejemplo.xlsx") }, PerfilDatos(nombre = "Juan Pérez"), {}, {})
+    VistaScreen(rentaViewModelDePrueba().apply { cargarExogena("exogena_2025_ejemplo.xlsx") }, PerfilDatos(nombre = "Juan Pérez"), {}, {})
 }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 1400)
 @Composable
 private fun PdfPreview() = MiRentaTheme {
-    PdfScreen(RentaViewModel().apply { cargarEjemplo() }, PerfilDatos(nombre = "Juan Pérez"), {}, {})
+    PdfScreen(rentaViewModelDePrueba().apply { cargarEjemplo() }, PerfilDatos(nombre = "Juan Pérez"), {}, {})
 }

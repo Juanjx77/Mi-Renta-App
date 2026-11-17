@@ -31,7 +31,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mirenta.domain.Campo
 import com.mirenta.domain.PerfilDatos
 import com.mirenta.domain.Reglas2025
@@ -39,6 +38,8 @@ import com.mirenta.domain.SeccionesDeclaracion
 import com.mirenta.domain.Validadores
 import com.mirenta.ui.PerfilViewModel
 import com.mirenta.ui.RentaViewModel
+import com.mirenta.ui.perfilViewModelDePrueba
+import com.mirenta.ui.rentaViewModelDePrueba
 import com.mirenta.ui.components.Aviso
 import com.mirenta.ui.components.AvisoTipo
 import com.mirenta.ui.components.BotonPrimario
@@ -61,7 +62,7 @@ import kotlin.math.abs
 fun DatosScreen(
     onBack: () -> Unit,
     onGuardar: () -> Unit,
-    perfilViewModel: PerfilViewModel = viewModel(),
+    perfilViewModel: PerfilViewModel,
 ) {
     val mostrar = LocalShowMessage.current
     val cargando by perfilViewModel.cargando.collectAsState()
@@ -423,19 +424,19 @@ fun SoportesScreen(onBack: () -> Unit) {
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun DatosPreview() = MiRentaTheme { DatosScreen({}, {}) }
+private fun DatosPreview() = MiRentaTheme { DatosScreen({}, {}, perfilViewModelDePrueba()) }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun PatrimonioPreview() = MiRentaTheme { PatrimonioScreen(RentaViewModel(), {}, {}) }
+private fun PatrimonioPreview() = MiRentaTheme { PatrimonioScreen(rentaViewModelDePrueba(), {}, {}) }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun DeduccionesPreview() = MiRentaTheme { DeduccionesScreen(RentaViewModel(), {}, {}) }
+private fun DeduccionesPreview() = MiRentaTheme { DeduccionesScreen(rentaViewModelDePrueba(), {}, {}) }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun RetencionesPreview() = MiRentaTheme { RetencionesScreen(RentaViewModel(), {}, {}) }
+private fun RetencionesPreview() = MiRentaTheme { RetencionesScreen(rentaViewModelDePrueba(), {}, {}) }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable

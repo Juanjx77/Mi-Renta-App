@@ -33,6 +33,7 @@ import com.mirenta.domain.Severidad
 import com.mirenta.domain.ValidacionesNegocio
 import com.mirenta.navigation.Rutas
 import com.mirenta.ui.RentaViewModel
+import com.mirenta.ui.rentaViewModelDePrueba
 import com.mirenta.ui.components.Aviso
 import com.mirenta.ui.components.AvisoTipo
 import com.mirenta.ui.components.BotonContorno
@@ -257,14 +258,14 @@ fun VerificarScreen(vm: RentaViewModel, onBack: () -> Unit, onNav: (String) -> U
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 1100)
 @Composable
-private fun FormularioPreview() = MiRentaTheme { FormularioScreen(RentaViewModel().apply { cargarEjemplo() }) {} }
+private fun FormularioPreview() = MiRentaTheme { FormularioScreen(rentaViewModelDePrueba().apply { cargarEjemplo() }) {} }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun DetallePreview() = MiRentaTheme { DetalleScreen(RentaViewModel().apply { cargarEjemplo() }) {} }
+private fun DetallePreview() = MiRentaTheme { DetalleScreen(rentaViewModelDePrueba().apply { cargarEjemplo() }) {} }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
 private fun VerificarPreview() = MiRentaTheme {
-    VerificarScreen(RentaViewModel().apply { cargarEjemplo() }, {}, {})
+    VerificarScreen(rentaViewModelDePrueba().apply { cargarEjemplo() }, {}, {})
 }

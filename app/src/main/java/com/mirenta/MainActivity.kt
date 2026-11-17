@@ -9,6 +9,8 @@ import com.mirenta.navigation.MiRentaApp
 import com.mirenta.ui.theme.MiRentaTheme
 
 class MainActivity : ComponentActivity() {
+    private val container by lazy { AppContainer() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -17,7 +19,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             MiRentaTheme {
-                MiRentaApp()
+                MiRentaApp(container)
             }
         }
     }

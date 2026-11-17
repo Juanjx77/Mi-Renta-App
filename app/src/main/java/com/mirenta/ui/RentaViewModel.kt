@@ -5,8 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
+import com.mirenta.data.ConflictoVersionException
 import com.mirenta.data.DeclaracionRepository
+import com.mirenta.data.ErrorRepositorio
 import com.mirenta.domain.Campo
 import com.mirenta.domain.Entradas
 import com.mirenta.domain.Resultado
@@ -20,8 +21,8 @@ import kotlinx.coroutines.launch
 
 /** Estado compartido entre pantallas (exógena + simulador). */
 class RentaViewModel(
-    private val declaracionRepository: DeclaracionRepository = DeclaracionRepository(),
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val declaracionRepository: DeclaracionRepository,
+    private val uidActual: () -> String?
 ) : ViewModel() {
     var exogena by mutableStateOf<String?>(null)
         private set
@@ -43,7 +44,7 @@ class RentaViewModel(
     }
 
     fun cargar() {
-        val currentUid = auth.currentUser?.uid ?: return
+        val currentUid = uidActual() ?: return
         viewModelScope.launch {
             _errorRed.value = null
             try {
@@ -51,6 +52,8 @@ class RentaViewModel(
                 if (guardadas != null) {
                     declaracion = guardadas
                 }
+            } catch (e: ErrorRepositorio) {
+                _errorRed.value = e.message
             } catch (e: Exception) {
                 _errorRed.value = "Error al cargar los datos. Verifica tu conexión a internet."
             }
@@ -58,18 +61,33 @@ class RentaViewModel(
     }
 
     fun guardar(onExito: () -> Unit = {}) {
-        val currentUid = auth.currentUser?.uid ?: return
+        val currentUid = uidActual() ?: return
         viewModelScope.launch {
             _errorRed.value = null
             try {
-                if (auth.currentUser?.uid != currentUid) return@launch
+                if (uidActual() != currentUid) return@launch
                 declaracionRepository.guardar(currentUid, declaracion)
                 onExito()
             } catch (e: TimeoutCancellationException) {
                 _errorRed.value = "Sin conexión estable: tus cambios se enviarán cuando vuelva internet."
+            } catch (e: ConflictoVersionException) {
+                recargarTrasConflicto(currentUid)
+            } catch (e: ErrorRepositorio) {
+                _errorRed.value = e.message
             } catch (e: Exception) {
                 _errorRed.value = "Error al guardar los datos. Verifica tu conexión a internet."
             }
+        }
+    }
+
+    private suspend fun recargarTrasConflicto(uid: String) {
+        try {
+            declaracionRepository.cargar(uid)?.let { declaracion = it }
+            _errorRed.value = "La declaración se actualizó desde otro dispositivo. Se cargaron los datos más recientes; revísalos y vuelve a guardar."
+        } catch (e: ErrorRepositorio) {
+            _errorRed.value = e.message
+        } catch (e: Exception) {
+            _errorRed.value = "Error al cargar los datos. Verifica tu conexión a internet."
         }
     }
 
