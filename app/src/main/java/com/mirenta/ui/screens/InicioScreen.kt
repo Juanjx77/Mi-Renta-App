@@ -49,6 +49,8 @@ import com.mirenta.navigation.Rutas
 import com.mirenta.ui.AuthViewModel
 import com.mirenta.ui.PerfilViewModel
 import com.mirenta.ui.RentaViewModel
+import com.mirenta.ui.perfilViewModelDePrueba
+import com.mirenta.ui.rentaViewModelDePrueba
 import com.mirenta.ui.components.BotonContorno
 import com.mirenta.ui.components.Fila
 import com.mirenta.ui.components.FilasCard
@@ -63,7 +65,7 @@ import kotlin.math.abs
 fun InicioScreen(
     vm: RentaViewModel,
     authViewModel: AuthViewModel = viewModel(),
-    perfilViewModel: PerfilViewModel = viewModel(),
+    perfilViewModel: PerfilViewModel,
     onNav: (String) -> Unit,
     onLogout: () -> Unit,
 ) {
@@ -212,4 +214,4 @@ private fun Dato(etiqueta: String, valor: String, modifier: Modifier) {
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun InicioPreview() = MiRentaTheme { InicioScreen(RentaViewModel(), onNav = {}, onLogout = {}) }
+private fun InicioPreview() = MiRentaTheme { InicioScreen(rentaViewModelDePrueba(), perfilViewModel = perfilViewModelDePrueba(), onNav = {}, onLogout = {}) }

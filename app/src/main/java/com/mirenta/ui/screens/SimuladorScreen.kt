@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mirenta.domain.Campo
 import com.mirenta.ui.RentaViewModel
+import com.mirenta.ui.rentaViewModelDePrueba
 import com.mirenta.ui.components.Aviso
 import com.mirenta.ui.components.AvisoTipo
 import com.mirenta.ui.components.BotonContorno
@@ -155,10 +156,10 @@ fun SimuladorScreen(vm: RentaViewModel, onNav: (String) -> Unit) {
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun SimuladorPreview() = MiRentaTheme { SimuladorScreen(RentaViewModel().apply { cargarEjemplo() }) {} }
+private fun SimuladorPreview() = MiRentaTheme { SimuladorScreen(rentaViewModelDePrueba().apply { cargarEjemplo() }) {} }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 1400)
 @Composable
 private fun SimuladorCalculadoPreview() = MiRentaTheme {
-    SimuladorScreen(RentaViewModel().apply { cargarEjemplo(); calcular() }) {}
+    SimuladorScreen(rentaViewModelDePrueba().apply { cargarEjemplo(); calcular() }) {}
 }

@@ -49,6 +49,7 @@ import com.mirenta.domain.ExogenaImportador
 import com.mirenta.domain.ResultadoImportacion
 import com.mirenta.navigation.Rutas
 import com.mirenta.ui.RentaViewModel
+import com.mirenta.ui.rentaViewModelDePrueba
 import com.mirenta.ui.components.Aviso
 import com.mirenta.ui.components.AvisoTipo
 import com.mirenta.ui.components.BotonContorno
@@ -257,10 +258,10 @@ fun ExogenaScreen(vm: RentaViewModel, onNav: (String) -> Unit) {
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
-private fun ExogenaVaciaPreview() = MiRentaTheme { ExogenaScreen(RentaViewModel()) {} }
+private fun ExogenaVaciaPreview() = MiRentaTheme { ExogenaScreen(rentaViewModelDePrueba()) {} }
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 780)
 @Composable
 private fun ExogenaCargadaPreview() = MiRentaTheme {
-    ExogenaScreen(RentaViewModel().apply { cargarExogena("exogena_2025_ejemplo.xlsx") }) {}
+    ExogenaScreen(rentaViewModelDePrueba().apply { cargarExogena("exogena_2025_ejemplo.xlsx") }) {}
 }

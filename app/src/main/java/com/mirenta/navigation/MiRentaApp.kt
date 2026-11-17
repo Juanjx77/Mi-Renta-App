@@ -36,7 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.mirenta.data.AuthRepository
+import com.mirenta.AppContainer
 import com.mirenta.ui.AuthViewModel
 import com.mirenta.ui.PerfilViewModel
 import com.mirenta.ui.RentaViewModel
@@ -62,12 +62,13 @@ import com.mirenta.ui.theme.RC
 import kotlinx.coroutines.launch
 
 @Composable
-fun MiRentaApp() {
+fun MiRentaApp(container: AppContainer) {
     val nav = rememberNavController()
-    val vm: RentaViewModel = viewModel()
-    val authVm: AuthViewModel = viewModel()
-    val perfilVm: PerfilViewModel = viewModel()
-    val authRepo = remember { AuthRepository() }
+    val factory = container.viewModelFactory
+    val vm: RentaViewModel = viewModel(factory = factory)
+    val authVm: AuthViewModel = viewModel(factory = factory)
+    val perfilVm: PerfilViewModel = viewModel(factory = factory)
+    val authRepo = container.authRepository
     val startDestination = remember {
         if (authRepo.usuarioActual != null) Rutas.Inicio else Rutas.Login
     }
@@ -159,7 +160,11 @@ fun MiRentaApp() {
                         )
                     }
                     composable(Rutas.Datos) {
-                        DatosScreen(onBack = { irAInicio() }, onGuardar = { irAInicio() })
+                        DatosScreen(
+                            onBack = { irAInicio() },
+                            onGuardar = { irAInicio() },
+                            perfilViewModel = viewModel(factory = factory),
+                        )
                     }
                     composable(Rutas.Ingresos) {
                         IngresosScreen(vm, onBack = { irAInicio() }, onGuardar = { irAInicio() })

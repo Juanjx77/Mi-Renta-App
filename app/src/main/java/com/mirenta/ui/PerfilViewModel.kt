@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mirenta.data.FirestorePerfilRepository
 import com.mirenta.data.PerfilRepository
 import com.mirenta.domain.PerfilDatos
 import kotlinx.coroutines.TimeoutCancellationException
@@ -15,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PerfilViewModel(
-    private val repository: PerfilRepository = FirestorePerfilRepository()
+    private val repository: PerfilRepository
 ) : ViewModel() {
 
     var perfil by mutableStateOf(PerfilDatos())
