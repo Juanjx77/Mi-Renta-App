@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.mirenta.data.DeclaracionRepository
+import com.mirenta.data.FirestoreDeclaracionRepository
 import com.mirenta.domain.Campo
 import com.mirenta.domain.Entradas
 import com.mirenta.domain.Resultado
@@ -20,7 +21,7 @@ import kotlinx.coroutines.launch
 
 /** Estado compartido entre pantallas (exógena + simulador). */
 class RentaViewModel(
-    private val declaracionRepository: DeclaracionRepository = DeclaracionRepository(),
+    private val declaracionRepository: DeclaracionRepository = FirestoreDeclaracionRepository(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
     var exogena by mutableStateOf<String?>(null)
