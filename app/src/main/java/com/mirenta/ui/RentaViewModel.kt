@@ -5,7 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mirenta.data.ConflictoVersionException
 import com.mirenta.data.DeclaracionRepository
+import com.mirenta.data.ErrorRepositorio
 import com.mirenta.domain.Campo
 import com.mirenta.domain.Entradas
 import com.mirenta.domain.Resultado
@@ -50,6 +52,8 @@ class RentaViewModel(
                 if (guardadas != null) {
                     declaracion = guardadas
                 }
+            } catch (e: ErrorRepositorio) {
+                _errorRed.value = e.message
             } catch (e: Exception) {
                 _errorRed.value = "Error al cargar los datos. Verifica tu conexión a internet."
             }
@@ -66,9 +70,24 @@ class RentaViewModel(
                 onExito()
             } catch (e: TimeoutCancellationException) {
                 _errorRed.value = "Sin conexión estable: tus cambios se enviarán cuando vuelva internet."
+            } catch (e: ConflictoVersionException) {
+                recargarTrasConflicto(currentUid)
+            } catch (e: ErrorRepositorio) {
+                _errorRed.value = e.message
             } catch (e: Exception) {
                 _errorRed.value = "Error al guardar los datos. Verifica tu conexión a internet."
             }
+        }
+    }
+
+    private suspend fun recargarTrasConflicto(uid: String) {
+        try {
+            declaracionRepository.cargar(uid)?.let { declaracion = it }
+            _errorRed.value = "La declaración se actualizó desde otro dispositivo. Se cargaron los datos más recientes; revísalos y vuelve a guardar."
+        } catch (e: ErrorRepositorio) {
+            _errorRed.value = e.message
+        } catch (e: Exception) {
+            _errorRed.value = "Error al cargar los datos. Verifica tu conexión a internet."
         }
     }
 

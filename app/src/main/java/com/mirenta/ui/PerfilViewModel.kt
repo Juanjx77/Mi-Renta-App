@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mirenta.data.ErrorRepositorio
 import com.mirenta.data.PerfilRepository
 import com.mirenta.domain.PerfilDatos
 import kotlinx.coroutines.TimeoutCancellationException
@@ -39,6 +40,8 @@ class PerfilViewModel(
                 if (resultado != null) {
                     perfil = resultado
                 }
+            } catch (e: ErrorRepositorio) {
+                _errorRed.value = e.message
             } catch (e: Exception) {
                 _errorRed.value = "Error al cargar los datos. Verifica tu conexión a internet."
             } finally {
@@ -57,6 +60,8 @@ class PerfilViewModel(
                 onExito()
             } catch (e: TimeoutCancellationException) {
                 _errorRed.value = "Sin conexión estable: tus cambios se enviarán cuando vuelva internet."
+            } catch (e: ErrorRepositorio) {
+                _errorRed.value = e.message
             } catch (e: Exception) {
                 _errorRed.value = "Error al guardar los datos. Verifica tu conexión a internet."
             } finally {
